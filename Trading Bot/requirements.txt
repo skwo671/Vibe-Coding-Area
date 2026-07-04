@@ -1,6 +1,9 @@
-futu-api==11.14.1030
-pandas==2.2.2
-python-dotenv==1.0.1
-pydantic==2.8.2
-pyyaml==6.0.2
-numpy==2.1.1
+futu-api==10.8.6808
+matplotlib==3.11.0
+numpy==2.5.0
+pandas==3.0.3
+pydantic==2.13.4
+pydantic-settings==2.14.2
+python-dotenv==1.2.2
+pyyaml==6.0.3
+yfinance==1.5.1

@@ -31,6 +31,27 @@ python -m app.main
 
 The bot subscribes to quotes, computes SMA fast/slow, and places market orders on crossovers, respecting max position and stop/take risk limits.
 
+#### Crypto and US Stock Opportunity Scanner
+Use the scanner to build a watchlist of crypto and US stocks that match all of these conditions:
+- A 52-week high occurred within the last 7 days.
+- The latest 4-hour close is above MA10, MA20, and MA50.
+- Market cap is greater than 100M USD.
+
+```bash
+python -m app.market_scanner
+```
+
+Useful options:
+```bash
+python -m app.market_scanner --crypto BTC-USD,ETH-USD,SOL-USD --stocks NVDA,MSFT,AAPL
+python -m app.market_scanner --output-dir scanner_output
+python -m app.market_scanner --sample-data
+```
+
+The scanner writes `scanner_output/candidates.csv`. For crypto candidates, it also writes a chart showing the 4-hour close, MA10/MA20/MA50, the latest 52-week high, an approximate buy zone near the MA10-MA20 pullback area, and a stop reference below MA50.
+
+This scanner is for watchlist generation only and is not financial advice.
+
 #### Notes
 - Use at your own risk. Market orders can fill at unfavorable prices.
 - Backtest thoroughly before going live. This sample is for education only.
