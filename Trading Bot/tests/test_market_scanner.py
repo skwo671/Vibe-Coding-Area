@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
@@ -13,6 +15,7 @@ from app.market_scanner import (
     recent_52_week_high,
     scan_assets,
     weekly_turnover_rate,
+    write_candidates_csv,
 )
 
 
@@ -106,6 +109,12 @@ class MarketScannerTests(unittest.TestCase):
 
         self.assertEqual(scan_assets(assets, FakeProvider(daily_volume=1), weekly_turnover_min=0.05), [])
         self.assertEqual(len(scan_assets(assets, FakeProvider(daily_volume=5_000_000), weekly_turnover_min=0.05)), 1)
+
+    def test_write_candidates_csv_keeps_headers_when_empty(self) -> None:
+        with TemporaryDirectory() as tmp:
+            path = write_candidates_csv([], Path(tmp))
+
+            self.assertIn("weekly_turnover_pct", path.read_text())
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Iterable, Protocol
 
@@ -331,7 +331,8 @@ def write_candidates_csv(candidates: list[Candidate], output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / "candidates.csv"
     rows = [asdict(candidate) for candidate in candidates]
-    pd.DataFrame(rows).to_csv(path, index=False)
+    columns = [field.name for field in fields(Candidate)]
+    pd.DataFrame(rows, columns=columns).to_csv(path, index=False)
     return path
 
 
