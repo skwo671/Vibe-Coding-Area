@@ -40,6 +40,7 @@ DEFAULT_US_STOCK_SYMBOLS = (
     "LLY",
 )
 DEFAULT_MARKET_CAP_MIN = 100_000_000
+DEFAULT_WEEKLY_TURNOVER_MIN = 0.05
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,7 @@ class Candidate:
     asset_type: str
     latest_price: float
     market_cap: int
+    weekly_turnover_pct: float
     high_52w: float
     high_52w_date: str
     ma10_4h: float
@@ -133,9 +135,11 @@ class SampleMarketDataProvider:
         high = close * 1.01
         if symbol in self._passing_symbols:
             high[-3] = high.max() * 1.05
+            volume = np.full(len(index), 2_000_000_000 if symbol.endswith("-USD") else 150_000_000)
         else:
             high[-30] = high.max() * 1.05
-        return pd.DataFrame({"Open": close * 0.99, "High": high, "Low": close * 0.98, "Close": close}, index=index)
+            volume = np.full(len(index), 1_000_000)
+        return pd.DataFrame({"Open": close * 0.99, "High": high, "Low": close * 0.98, "Close": close, "Volume": volume}, index=index)
 
     def _four_hour_history(self, symbol: str) -> pd.DataFrame:
         now = pd.Timestamp.now(tz="UTC").floor("4h")
@@ -203,6 +207,22 @@ def moving_average_snapshot(four_hour_history: pd.DataFrame) -> tuple[bool, floa
     return latest > ma10 and latest > ma20 and latest > ma50, float(latest), float(ma10), float(ma20), float(ma50)
 
 
+def weekly_turnover_rate(daily_history: pd.DataFrame, market_cap: int, asset_type: str) -> float | None:
+    df = normalize_history(daily_history)
+    if market_cap <= 0 or "volume" not in df or "close" not in df:
+        return None
+
+    recent = df[["volume", "close"]].dropna().tail(7)
+    if len(recent) < 5:
+        return None
+
+    if asset_type == "crypto":
+        traded_value = recent["volume"].astype(float).sum()
+    else:
+        traded_value = (recent["volume"].astype(float) * recent["close"].astype(float)).sum()
+    return float(traded_value / market_cap)
+
+
 def estimate_buy_zone(latest_price: float, ma10: float, ma20: float, ma50: float) -> tuple[float, float, float]:
     upper = min(latest_price * 0.995, max(ma10, ma20))
     lower = min(ma10, ma20)
@@ -216,6 +236,7 @@ def scan_assets(
     assets: Iterable[AssetRequest],
     provider: MarketDataProvider,
     market_cap_min: int = DEFAULT_MARKET_CAP_MIN,
+    weekly_turnover_min: float = DEFAULT_WEEKLY_TURNOVER_MIN,
 ) -> list[Candidate]:
     candidates: list[Candidate] = []
     for asset in assets:
@@ -224,6 +245,10 @@ def scan_assets(
             continue
 
         daily = provider.history(asset.symbol, period="1y", interval="1d")
+        turnover = weekly_turnover_rate(daily, market_cap, asset.asset_type)
+        if turnover is None or turnover < weekly_turnover_min:
+            continue
+
         has_recent_high, high_52w, high_date = recent_52_week_high(daily)
         if not has_recent_high or high_date is None:
             continue
@@ -240,6 +265,7 @@ def scan_assets(
                 asset_type=asset.asset_type,
                 latest_price=round(latest, 4),
                 market_cap=int(market_cap),
+                weekly_turnover_pct=round(turnover * 100, 4),
                 high_52w=round(high_52w, 4),
                 high_52w_date=high_date.date().isoformat(),
                 ma10_4h=round(ma10, 4),
@@ -329,6 +355,7 @@ def print_summary(candidates: list[Candidate], csv_path: Path) -> None:
         print(
             f"{candidate.symbol} ({candidate.asset_type}) latest={candidate.latest_price} "
             f"buy_zone={candidate.buy_zone_low}-{candidate.buy_zone_high} "
+            f"weekly_turnover={candidate.weekly_turnover_pct}% "
             f"market_cap={candidate.market_cap}{chart_note}"
         )
 
@@ -338,6 +365,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--crypto", default=",".join(DEFAULT_CRYPTO_SYMBOLS), help="Comma-separated Yahoo Finance crypto symbols.")
     parser.add_argument("--stocks", default=",".join(DEFAULT_US_STOCK_SYMBOLS), help="Comma-separated Yahoo Finance US stock symbols.")
     parser.add_argument("--market-cap-min", type=int, default=DEFAULT_MARKET_CAP_MIN, help="Minimum market cap in USD.")
+    parser.add_argument("--weekly-turnover-min", type=float, default=DEFAULT_WEEKLY_TURNOVER_MIN, help="Minimum 7-day turnover rate as a decimal, e.g. 0.05 for 5%.")
     parser.add_argument("--output-dir", default="scanner_output", help="Directory for CSV and crypto charts.")
     parser.add_argument("--sample-data", action="store_true", help="Use deterministic sample data instead of live Yahoo Finance data.")
     parser.add_argument("--no-plots", action="store_true", help="Skip crypto chart generation.")
@@ -354,7 +382,12 @@ def main() -> int:
     provider: MarketDataProvider = SampleMarketDataProvider() if args.sample_data else YahooFinanceProvider()
     output_dir = Path(args.output_dir)
 
-    candidates = scan_assets(build_assets(crypto_symbols, stock_symbols), provider, market_cap_min=args.market_cap_min)
+    candidates = scan_assets(
+        build_assets(crypto_symbols, stock_symbols),
+        provider,
+        market_cap_min=args.market_cap_min,
+        weekly_turnover_min=args.weekly_turnover_min,
+    )
     if not args.no_plots:
         updated: list[Candidate] = []
         for candidate in candidates:

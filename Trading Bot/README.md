@@ -36,6 +36,7 @@ Use the scanner to build a watchlist of crypto and US stocks that match all of t
 - A 52-week high occurred within the last 7 days.
 - The latest 4-hour close is above MA10, MA20, and MA50.
 - Market cap is greater than 100M USD.
+- The trailing 7-day turnover rate is at least 5%.
 
 ```bash
 python -m app.market_scanner
@@ -44,6 +45,7 @@ python -m app.market_scanner
 Useful options:
 ```bash
 python -m app.market_scanner --crypto BTC-USD,ETH-USD,SOL-USD --stocks NVDA,MSFT,AAPL
+python -m app.market_scanner --weekly-turnover-min 0.05
 python -m app.market_scanner --output-dir scanner_output
 python -m app.market_scanner --sample-data
 ```

@@ -12,16 +12,18 @@ from app.market_scanner import (
     moving_average_snapshot,
     recent_52_week_high,
     scan_assets,
+    weekly_turnover_rate,
 )
 
 
 class FakeProvider(MarketDataProvider):
-    def __init__(self, market_cap: int = 250_000_000) -> None:
+    def __init__(self, market_cap: int = 250_000_000, daily_volume: int = 1_000_000) -> None:
         self._market_cap = market_cap
+        self._daily_volume = daily_volume
 
     def history(self, symbol: str, period: str, interval: str) -> pd.DataFrame:
         if interval == "1d":
-            return make_daily_history(recent_high=True)
+            return make_daily_history(recent_high=True, daily_volume=self._daily_volume)
         if interval == "4h":
             return make_four_hour_history(above_mas=True)
         raise ValueError(interval)
@@ -30,13 +32,14 @@ class FakeProvider(MarketDataProvider):
         return self._market_cap
 
 
-def make_daily_history(recent_high: bool) -> pd.DataFrame:
+def make_daily_history(recent_high: bool, daily_volume: int = 1_000_000) -> pd.DataFrame:
     now = pd.Timestamp("2026-07-04", tz="UTC")
     index = pd.date_range(end=now, periods=365, freq="D")
     close = np.linspace(100, 150, len(index))
     high = close * 1.01
     high[-3 if recent_high else -20] = high.max() * 1.05
-    return pd.DataFrame({"High": high, "Close": close}, index=index)
+    volume = np.full(len(index), daily_volume)
+    return pd.DataFrame({"High": high, "Close": close, "Volume": volume}, index=index)
 
 
 def make_four_hour_history(above_mas: bool) -> pd.DataFrame:
@@ -86,11 +89,23 @@ class MarketScannerTests(unittest.TestCase):
         self.assertEqual(high, 112)
         self.assertEqual(stop, 98)
 
+    def test_weekly_turnover_rate_uses_trailing_seven_sessions(self) -> None:
+        turnover = weekly_turnover_rate(make_daily_history(recent_high=True, daily_volume=100_000), 100_000_000, "stock")
+
+        self.assertIsNotNone(turnover)
+        self.assertGreater(turnover, 0.05)
+
     def test_scan_assets_applies_market_cap_threshold(self) -> None:
         assets = [AssetRequest("BTC-USD", "crypto")]
 
         self.assertEqual(scan_assets(assets, FakeProvider(market_cap=99_000_000)), [])
         self.assertEqual(len(scan_assets(assets, FakeProvider(market_cap=101_000_000))), 1)
+
+    def test_scan_assets_applies_weekly_turnover_threshold(self) -> None:
+        assets = [AssetRequest("BTC-USD", "crypto")]
+
+        self.assertEqual(scan_assets(assets, FakeProvider(daily_volume=1), weekly_turnover_min=0.05), [])
+        self.assertEqual(len(scan_assets(assets, FakeProvider(daily_volume=5_000_000), weekly_turnover_min=0.05)), 1)
 
 
 if __name__ == "__main__":
