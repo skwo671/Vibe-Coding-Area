@@ -34,7 +34,7 @@ The bot subscribes to quotes, computes SMA fast/slow, and places market orders o
 #### Crypto and US Stock Opportunity Scanner
 Use the scanner to build a watchlist of crypto and US stocks that match all of these conditions:
 - A 52-week high occurred within the last 7 days.
-- The latest 4-hour close is above MA10, MA20, and MA50.
+- The latest 4-hour close is above MA20 and MA50.
 - Market cap is greater than 100M USD.
 - The trailing 7-day turnover rate is at least 5%.
 
@@ -50,7 +50,9 @@ python -m app.market_scanner --output-dir scanner_output
 python -m app.market_scanner --sample-data
 ```
 
-The scanner writes `scanner_output/candidates.csv`. For crypto candidates, it also writes a chart showing the 4-hour close, MA10/MA20/MA50, the latest 52-week high, an approximate buy zone near the MA10-MA20 pullback area, and a stop reference below MA50.
+The scanner writes `scanner_output/candidates.csv`. For crypto candidates, it also writes a chart showing the 4-hour close, MA10/MA20/MA50, the latest 52-week high, an approximate buy zone near the MA20-MA50 pullback area, and a stop reference below MA50.
+
+Market data is fetched from Yahoo Finance via `yfinance` (daily OHLCV, 4-hour OHLCV, and market cap). This is convenient for a watchlist scan, but Yahoo does not provide a single API to screen the entire market at once, so the scanner works from a symbol list you provide or from the built-in defaults.
 
 This scanner is for watchlist generation only and is not financial advice.
 

@@ -72,24 +72,38 @@ class MarketScannerTests(unittest.TestCase):
 
         self.assertFalse(matched)
 
-    def test_moving_average_snapshot_requires_price_above_all_mas(self) -> None:
-        matched, latest, ma10, ma20, ma50 = moving_average_snapshot(make_four_hour_history(above_mas=True))
+    def test_moving_average_snapshot_requires_price_above_ma20_and_ma50(self) -> None:
+        matched, latest, _, ma20, ma50 = moving_average_snapshot(make_four_hour_history(above_mas=True))
 
         self.assertTrue(matched)
-        self.assertGreater(latest, ma10)
         self.assertGreater(latest, ma20)
         self.assertGreater(latest, ma50)
 
-    def test_moving_average_snapshot_rejects_price_below_mas(self) -> None:
+    def test_moving_average_snapshot_allows_price_below_ma10(self) -> None:
+        index = pd.date_range(end=pd.Timestamp("2026-07-04", tz="UTC"), periods=80, freq="4h")
+        close = np.full(80, 112.0)
+        close[:70] = np.linspace(100, 110, 70)
+        close[-10:] = np.linspace(111, 120, 10)
+        close[-1] = 114.0
+        history = pd.DataFrame({"Close": close}, index=index)
+
+        matched, latest, ma10, ma20, ma50 = moving_average_snapshot(history)
+
+        self.assertTrue(matched)
+        self.assertLess(latest, ma10)
+        self.assertGreater(latest, ma20)
+        self.assertGreater(latest, ma50)
+
+    def test_moving_average_snapshot_rejects_price_below_ma50(self) -> None:
         matched, _, _, _, _ = moving_average_snapshot(make_four_hour_history(above_mas=False))
 
         self.assertFalse(matched)
 
-    def test_estimate_buy_zone_uses_ma10_ma20_pullback_and_ma50_stop(self) -> None:
+    def test_estimate_buy_zone_uses_ma20_ma50_pullback_and_ma50_stop(self) -> None:
         low, high, stop = estimate_buy_zone(latest_price=120, ma10=112, ma20=108, ma50=100)
 
-        self.assertEqual(low, 108)
-        self.assertEqual(high, 112)
+        self.assertEqual(low, 100)
+        self.assertEqual(high, 108)
         self.assertEqual(stop, 98)
 
     def test_weekly_turnover_rate_uses_trailing_seven_sessions(self) -> None:

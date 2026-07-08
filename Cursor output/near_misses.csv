@@ -1,5 +1,0 @@
-symbol,asset_type,status,latest_price,ma10_4h,ma20_4h,ma50_4h,weekly_turnover_pct,note
-V,stock,failed_4h_ma_filter,352.13,352.55,343.39,331.34,4.06,Passed market cap, 3% turnover, and recent 52-week high; latest 4h close is below MA10.
-PANW,stock,failed_4h_ma_filter,337.06,348.62,324.38,297.25,7.48,Passed market cap, 3% turnover, and recent 52-week high; latest 4h close is below MA10.
-CRWD,stock,failed_4h_ma_filter,194.40,195.02,184.38,177.99,8.48,Passed market cap, 3% turnover, and recent 52-week high; latest 4h close is below MA10.
-GEV,stock,failed_4h_ma_filter,1077.15,1126.73,1097.38,1022.40,8.34,Passed market cap, 3% turnover, and recent 52-week high; latest 4h close is below MA10.

@@ -1,16 +1,17 @@
 Scan date (UTC): 2026-07-08
 Weekly turnover minimum: 3%
 Market cap minimum: 100M USD
+MA filter: latest 4h close above MA20 and MA50 (MA10 not required)
+Data source: Yahoo Finance via yfinance
 Crypto symbols scanned: 30
 US stock symbols scanned: 45
-Total symbols scanned: 75
-Passed market cap: 69
-Passed 3% weekly turnover: 64
-Passed recent 52-week high (7d): 4
-Passed 4h price above MA10/MA20/MA50: 0
-Final candidates: 0
+Final candidates: 3
+
+Candidates:
+- V (stock)
+- PANW (stock)
+- CRWD (stock)
 
 Notes:
-- Expanded symbol universe and relaxed turnover from 5% to 3%.
-- No crypto symbols currently have a 52-week high within the last 7 days under this scan.
-- Four US stocks were close matches but failed the final 4-hour moving-average filter.
+- GEV was a near-miss previously but failed the MA50 requirement under the relaxed rule.
+- No crypto symbols currently matched all filters in this run.

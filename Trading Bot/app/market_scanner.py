@@ -251,10 +251,9 @@ def moving_average_snapshot(four_hour_history: pd.DataFrame) -> tuple[bool, floa
     ma20 = close.rolling(20).mean().iloc[-1]
     ma50 = close.rolling(50).mean().iloc[-1]
     latest = close.iloc[-1]
-    values = (latest, ma10, ma20, ma50)
-    if any(pd.isna(value) for value in values):
+    if any(pd.isna(value) for value in (latest, ma20, ma50)):
         return False, float(latest), float(ma10), float(ma20), float(ma50)
-    return latest > ma10 and latest > ma20 and latest > ma50, float(latest), float(ma10), float(ma20), float(ma50)
+    return latest > ma20 and latest > ma50, float(latest), float(ma10), float(ma20), float(ma50)
 
 
 def weekly_turnover_rate(daily_history: pd.DataFrame, market_cap: int, asset_type: str) -> float | None:
@@ -274,8 +273,8 @@ def weekly_turnover_rate(daily_history: pd.DataFrame, market_cap: int, asset_typ
 
 
 def estimate_buy_zone(latest_price: float, ma10: float, ma20: float, ma50: float) -> tuple[float, float, float]:
-    upper = min(latest_price * 0.995, max(ma10, ma20))
-    lower = min(ma10, ma20)
+    upper = min(latest_price * 0.995, ma20)
+    lower = ma50
     if upper < lower:
         lower, upper = upper, lower
     stop_reference = ma50 * 0.98
@@ -356,7 +355,7 @@ def plot_crypto_candidate(
     ax.axhline(candidate.high_52w, color="tab:purple", linestyle="--", linewidth=1, label="52-week high")
     ax.axhspan(candidate.buy_zone_low, candidate.buy_zone_high, color="tab:green", alpha=0.16, label="potential buy zone")
     ax.axhline(candidate.stop_reference, color="tab:red", linestyle=":", linewidth=1, label="stop reference")
-    ax.set_title(f"{candidate.symbol} 4h setup: price above MA10/MA20/MA50")
+    ax.set_title(f"{candidate.symbol} 4h setup: price above MA20/MA50")
     ax.set_ylabel("Price")
     ax.legend(loc="best")
     ax.grid(True, alpha=0.25)
@@ -412,7 +411,7 @@ def print_summary(candidates: list[Candidate], csv_path: Path) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Scan crypto and US stocks for recent 52-week highs and 4h MA strength.")
+    parser = argparse.ArgumentParser(description="Scan crypto and US stocks for recent 52-week highs and 4h MA20/MA50 strength.")
     parser.add_argument("--crypto", default=",".join(DEFAULT_CRYPTO_SYMBOLS), help="Comma-separated Yahoo Finance crypto symbols.")
     parser.add_argument("--stocks", default=",".join(DEFAULT_US_STOCK_SYMBOLS), help="Comma-separated Yahoo Finance US stock symbols.")
     parser.add_argument("--market-cap-min", type=int, default=DEFAULT_MARKET_CAP_MIN, help="Minimum market cap in USD.")
