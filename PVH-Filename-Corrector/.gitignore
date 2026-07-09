@@ -1,0 +1,11 @@
+.venv/
+data/
+models/*
+!models/suffix_classifier/
+models/suffix_classifier/*
+!models/suffix_classifier/hierarchical_classifier.joblib
+!models/suffix_classifier/suffix_classifier.joblib
+output/
+__pycache__/
+*.pyc
+.DS_Store
