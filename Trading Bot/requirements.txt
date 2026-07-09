@@ -1,6 +1,6 @@
-futu-api==11.14.1030
+futu-api==10.8.6808
 pandas==2.2.2
 python-dotenv==1.0.1
-pydantic==2.8.2
+pydantic==1.10.18
 pyyaml==6.0.2
 numpy==2.1.1
