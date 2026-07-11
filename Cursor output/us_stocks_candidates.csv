@@ -1,0 +1,5 @@
+symbol,name,asset_type,platform,data_source,timeframe,latest_price,market_cap,weekly_turnover_pct,high_52w,high_52w_date,ma20,ma50,buy_zone_low,buy_zone_high,stop_reference,external_id,chart_path
+V,V,stock,yahoo,yahoo,1d,348.97,663651536207,3.3683,365.02,2026-07-06,338.108,330.0824,330.0824,338.108,323.4808,V,/workspace/Cursor output/us_stock_charts/V_daily.png
+PANW,PANW,stock,yahoo,yahoo,1d,325.91,265616652984,7.0644,368.17,2026-07-06,310.2935,267.0902,267.0902,310.2935,261.7484,PANW,/workspace/Cursor output/us_stock_charts/PANW_daily.png
+CRWD,CRWD,stock,yahoo,yahoo,1d,187.18,190597764572,6.5537,209.5,2026-07-06,180.7647,163.2202,163.2202,180.7647,159.9558,CRWD,/workspace/Cursor output/us_stock_charts/CRWD_daily.png
+GEV,GEV,stock,yahoo,yahoo,1d,1091.5699,293326670508,7.015,1195.9399,2026-07-06,1065.5045,1038.7262,1038.7262,1065.5045,1017.9517,GEV,/workspace/Cursor output/us_stock_charts/GEV_daily.png

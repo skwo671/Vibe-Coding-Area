@@ -1,17 +1,10 @@
-Scan date (UTC): 2026-07-08
-Weekly turnover minimum: 3%
-Market cap minimum: 100M USD
-MA filter: latest 4h close above MA20 and MA50 (MA10 not required)
-Data source: Yahoo Finance via yfinance
-Crypto symbols scanned: 30
-US stock symbols scanned: 45
-Final candidates: 3
-
-Candidates:
-- V (stock)
-- PANW (stock)
-- CRWD (stock)
-
-Notes:
-- GEV was a near-miss previously but failed the MA50 requirement under the relaxed rule.
-- No crypto symbols currently matched all filters in this run.
+Crypto platform: coingecko
+US stock platform: yahoo
+Timeframe: daily (1d)
+Market cap minimum: 100,000,000 USD
+Weekly turnover minimum: 3.0%
+Crypto universe size: 500
+Crypto deep-scan limit: 40
+US stock universe size: 500
+Crypto candidates: 0
+US stock candidates: 4

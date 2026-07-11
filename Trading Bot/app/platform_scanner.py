@@ -260,14 +260,12 @@ class YahooFallbackStockClient:
         self.log = logging.getLogger("yahoo-fallback")
 
     def fetch_us_universe(self, market_cap_min: int, limit: int = DEFAULT_STOCK_UNIVERSE_SIZE) -> list[UniverseAsset]:
-        try:
-            tables = pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
-            symbols = [str(symbol).replace(".", "-") for symbol in tables[0]["Symbol"].tolist()]
-        except Exception as exc:
-            self.log.warning("Failed to load S&P 500 list: %s", exc)
+        symbols = self._load_sp500_symbols()
+        if not symbols:
             from .market_scanner import DEFAULT_US_STOCK_SYMBOLS
 
             symbols = list(DEFAULT_US_STOCK_SYMBOLS)
+            self.log.warning("Using built-in US stock fallback list (%s symbols).", len(symbols))
 
         assets: list[UniverseAsset] = []
         for symbol in symbols[:limit]:
@@ -285,6 +283,21 @@ class YahooFallbackStockClient:
                 )
             )
         return assets
+
+    def _load_sp500_symbols(self) -> list[str]:
+        try:
+            headers = {"User-Agent": "VibeCodingMarketScanner/1.0 (contact: local)"}
+            response = requests.get(
+                "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+                headers=headers,
+                timeout=30,
+            )
+            response.raise_for_status()
+            tables = pd.read_html(response.text)
+            return [str(symbol).replace(".", "-") for symbol in tables[0]["Symbol"].tolist()]
+        except Exception as exc:
+            self.log.warning("Failed to load S&P 500 list: %s", exc)
+            return []
 
     def market_cap(self, symbol: str) -> int | None:
         ticker = self._yf.Ticker(symbol)
