@@ -23,8 +23,9 @@ COINGECKO_BASE = "https://api.coingecko.com/api/v3"
 FINNHUB_BASE = "https://finnhub.io/api/v1"
 DEFAULT_CRYPTO_UNIVERSE_SIZE = 500
 DEFAULT_STOCK_UNIVERSE_SIZE = 500
-DEFAULT_CRYPTO_DEEP_SCAN_LIMIT = 80
-REQUEST_PAUSE_SECONDS = 1.2
+DEFAULT_CRYPTO_DEEP_SCAN_LIMIT = 40
+REQUEST_PAUSE_SECONDS = 2.5
+MAX_REQUEST_RETRIES = 4
 
 
 @dataclass(frozen=True)
@@ -101,10 +102,21 @@ class CoinGeckoClient:
         self._market_cache: list[UniverseAsset] | None = None
 
     def _get(self, path: str, params: dict | None = None) -> object:
-        time.sleep(self.pause_seconds)
-        response = requests.get(f"{COINGECKO_BASE}{path}", params=params or {}, timeout=30)
-        response.raise_for_status()
-        return response.json()
+        last_error: Exception | None = None
+        for attempt in range(MAX_REQUEST_RETRIES):
+            time.sleep(self.pause_seconds * (attempt + 1))
+            try:
+                response = requests.get(f"{COINGECKO_BASE}{path}", params=params or {}, timeout=30)
+                if response.status_code == 429:
+                    last_error = requests.HTTPError("429 Too Many Requests", response=response)
+                    continue
+                response.raise_for_status()
+                return response.json()
+            except Exception as exc:
+                last_error = exc
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError(f"CoinGecko request failed for {path}")
 
     def fetch_top_markets(self, limit: int = DEFAULT_CRYPTO_UNIVERSE_SIZE) -> list[UniverseAsset]:
         if self._market_cache is not None and len(self._market_cache) >= limit:
@@ -157,6 +169,8 @@ class CoinGeckoClient:
                 {"vs_currency": "usd", "days": 30, "interval": "daily"},
             )
             volume_frame = market_chart_to_daily_frame(chart.get("prices", []), chart.get("total_volumes", []))
+            if "volume" in frame.columns:
+                frame = frame.drop(columns=["volume"])
             merged = frame.join(volume_frame[["volume"]], how="left")
             merged["volume"] = merged["volume"].fillna(0.0)
             return merged
