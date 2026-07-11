@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     take_profit_pct: float = Field(default=0.10, env="TAKE_PROFIT_PCT")
 
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
+    finnhub_api_key: str = Field(default="", env="FINNHUB_API_KEY")
 
     class Config:
         env_file = ".env"

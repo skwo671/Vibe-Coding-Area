@@ -36,7 +36,7 @@ class FakeProvider(MarketDataProvider):
 
 
 def make_daily_history(recent_high: bool, daily_volume: int = 1_000_000) -> pd.DataFrame:
-    now = pd.Timestamp("2026-07-04", tz="UTC")
+    now = pd.Timestamp.now(tz="UTC").normalize()
     index = pd.date_range(end=now, periods=365, freq="D")
     close = np.linspace(100, 150, len(index))
     high = close * 1.01
@@ -46,7 +46,7 @@ def make_daily_history(recent_high: bool, daily_volume: int = 1_000_000) -> pd.D
 
 
 def make_four_hour_history(above_mas: bool) -> pd.DataFrame:
-    index = pd.date_range(end=pd.Timestamp("2026-07-04", tz="UTC"), periods=80, freq="4h")
+    index = pd.date_range(end=pd.Timestamp.now(tz="UTC"), periods=80, freq="4h")
     close = np.linspace(100, 150, len(index))
     if not above_mas:
         close[-1] = 95
@@ -62,7 +62,7 @@ class MarketScannerTests(unittest.TestCase):
 
         self.assertTrue(matched)
         self.assertGreater(high, 0)
-        self.assertEqual(high_date.date().isoformat(), "2026-07-02")
+        self.assertEqual(high_date.date().isoformat(), (pd.Timestamp.now(tz="UTC").normalize() - pd.Timedelta(days=2)).date().isoformat())
 
     def test_recent_52_week_high_rejects_stale_high(self) -> None:
         matched, _, _ = recent_52_week_high(

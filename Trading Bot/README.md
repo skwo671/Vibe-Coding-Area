@@ -56,6 +56,28 @@ Market data is fetched from Yahoo Finance via `yfinance` (daily OHLCV, 4-hour OH
 
 This scanner is for watchlist generation only and is not financial advice.
 
+#### Platform Scanner (CoinGecko + Finnhub/Yahoo, daily candles)
+For broader market coverage with separate crypto and US stock outputs:
+
+```bash
+python -m app.platform_scanner --output-dir platform_output
+```
+
+- Crypto universe: CoinGecko top market-cap coins (default 500)
+- US stock universe: Finnhub screener when `FINNHUB_API_KEY` is set, otherwise S&P 500 via Yahoo Finance
+- Timeframe: daily (1d) candles with MA20/MA50, 52-week high, and 7-day turnover filters
+- Outputs:
+  - `platform_output/crypto_candidates.csv`
+  - `platform_output/us_stocks_candidates.csv`
+  - `platform_output/crypto_charts/`
+  - `platform_output/us_stock_charts/`
+
+Set your Finnhub key in `.env`:
+
+```bash
+FINNHUB_API_KEY=your_key_here
+```
+
 #### Notes
 - Use at your own risk. Market orders can fill at unfavorable prices.
 - Backtest thoroughly before going live. This sample is for education only.
