@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from .crypto_indicators import CryptoAlert, detect_crypto_alerts, enrich_crypto_indicators, plot_crypto_technical_chart, write_crypto_alerts_csv
 from .market_scanner import (
     DEFAULT_MARKET_CAP_MIN,
     estimate_buy_zone,
@@ -377,7 +378,7 @@ def scan_crypto_platform(
     universe_size: int = DEFAULT_CRYPTO_UNIVERSE_SIZE,
     deep_scan_limit: int = DEFAULT_CRYPTO_DEEP_SCAN_LIMIT,
     chart_dir: Path | None = None,
-) -> list[PlatformCandidate]:
+) -> tuple[list[PlatformCandidate], list[CryptoAlert]]:
     log = logging.getLogger("platform.crypto")
     universe = client.fetch_top_markets(universe_size)
     prefiltered = [
@@ -390,8 +391,18 @@ def scan_crypto_platform(
     log.info("CoinGecko deep-scan list: %s/%s symbols (from %s universe)", len(scan_list), len(prefiltered), len(universe))
 
     candidates: list[PlatformCandidate] = []
+    alerts = []
     for index, asset in enumerate(scan_list, start=1):
         daily = client.fetch_daily_history(asset)
+        if daily.empty:
+            continue
+
+        chart_path = ""
+        if chart_dir is not None:
+            chart_path = plot_crypto_technical_chart(asset.symbol, daily, chart_dir)
+            indicator_frame = enrich_crypto_indicators(daily)
+            alerts.extend(detect_crypto_alerts(asset.symbol, indicator_frame))
+
         candidate = evaluate_daily_candidate(
             asset,
             daily,
@@ -401,12 +412,9 @@ def scan_crypto_platform(
         )
         if candidate is None:
             continue
-        chart_path = ""
-        if chart_dir is not None:
-            chart_path = plot_daily_candidate(candidate, daily, chart_dir)
         candidates.append(PlatformCandidate(**{**asdict(candidate), "chart_path": chart_path}))
         log.info("Crypto match %s (%s/%s)", asset.symbol, index, len(scan_list))
-    return candidates
+    return candidates, alerts
 
 
 def scan_us_stocks_platform(
@@ -529,7 +537,7 @@ def main() -> int:
     finnhub_key = os.getenv("FINNHUB_API_KEY", "").strip()
     finnhub = FinnhubClient(finnhub_key) if finnhub_key else None
 
-    crypto_candidates = scan_crypto_platform(
+    crypto_candidates, crypto_alerts = scan_crypto_platform(
         coingecko,
         market_cap_min=args.market_cap_min,
         weekly_turnover_min=args.weekly_turnover_min,
@@ -548,6 +556,7 @@ def main() -> int:
 
     write_platform_csv(crypto_candidates, crypto_csv)
     write_platform_csv(stock_candidates, stock_csv)
+    write_crypto_alerts_csv(crypto_alerts, output_dir / "crypto_alerts.csv")
 
     settings_path = output_dir / "scan_settings.txt"
     settings_path.write_text(
@@ -562,6 +571,7 @@ def main() -> int:
                 f"Crypto deep-scan limit: {args.crypto_deep_scan_limit}",
                 f"US stock universe size: {args.stock_universe_size}",
                 f"Crypto candidates: {len(crypto_candidates)}",
+                f"Crypto alerts: {len(crypto_alerts)}",
                 f"US stock candidates: {len(stock_candidates)}",
             ]
         )
@@ -575,6 +585,9 @@ def main() -> int:
             f"  {candidate.symbol} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
             f"buy_zone={candidate.buy_zone_low}-{candidate.buy_zone_high}"
         )
+    print(f"Crypto alerts: {len(crypto_alerts)} -> {output_dir / 'crypto_alerts.csv'}")
+    for alert in crypto_alerts:
+        print(f"  {alert.symbol} {alert.alert_type}: {alert.message} ({alert.value:.4f})")
     print(f"US stock candidates: {len(stock_candidates)} -> {stock_csv} (platform={stock_platform})")
     for candidate in stock_candidates:
         print(

@@ -69,8 +69,16 @@ python -m app.platform_scanner --output-dir platform_output
 - Outputs:
   - `platform_output/crypto_candidates.csv`
   - `platform_output/us_stocks_candidates.csv`
-  - `platform_output/crypto_charts/`
+  - `platform_output/crypto_alerts.csv`
+  - `platform_output/crypto_charts/` (EMA/RSI/Bollinger/OBV technical charts)
   - `platform_output/us_stock_charts/`
+
+Crypto technical chart spec:
+- EMA 20 (green), EMA 50 (orange), EMA 200 (red, bold)
+- RSI 14 with 70/30 overbought/oversold markers
+- Bollinger Bands 20,2 with shaded channel
+- OBV with 21-period EMA in a separate pane
+- Alerts for EMA 20/50 cross, Bollinger squeeze, and RSI overbought/oversold
 
 Set your Finnhub key in `.env`:
 
