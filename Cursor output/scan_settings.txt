@@ -4,7 +4,8 @@ Timeframe: daily (1d)
 Market cap minimum: 100,000,000 USD
 Weekly turnover minimum: 3.0%
 Crypto universe size: 500
-Crypto deep-scan limit: 40
+Crypto deep-scan limit: 15
 US stock universe size: 500
 Crypto candidates: 0
+Crypto alerts: 0
 US stock candidates: 4
