@@ -1,0 +1,5 @@
+symbol,latest_price,ema20,ema50,buy_zone_low,buy_zone_high,stop_reference,chart_path
+LAB,1.14,8.264164,4.862552,1.1343,4.862552,4.765301,/workspace/Cursor output/crypto_charts/LAB_technical.png
+B,0.158939,0.231896,0.236674,0.158144,0.236674,0.231941,/workspace/Cursor output/crypto_charts/B_technical.png
+RUNE,0.395671,0.423947,0.519475,0.393693,0.519475,0.509085,/workspace/Cursor output/crypto_charts/RUNE_technical.png
+ARB,0.087586,0.096011,0.138185,0.087148,0.138185,0.135421,/workspace/Cursor output/crypto_charts/ARB_technical.png
