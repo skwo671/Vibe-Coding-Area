@@ -11,11 +11,10 @@ import pandas as pd
 
 from .asset_display import (
     add_logo_to_axes,
-    chart_filename_zh,
+    chart_filename_en,
     configure_cjk_font,
-    crypto_logo_url_from_symbol,
     format_chart_title,
-    load_stock_zh_names,
+    resolve_stock_display,
 )
 
 
@@ -357,9 +356,14 @@ def plot_crypto_candidate(
     chart["ma20"] = chart["close"].rolling(20).mean()
     chart["ma50"] = chart["close"].rolling(50).mean()
 
-    name_zh = load_stock_zh_names().get(candidate.symbol.upper(), candidate.symbol)
-    name_en = candidate.symbol
-    logo_url = crypto_logo_url_from_symbol(candidate.symbol)
+    display = resolve_stock_display(candidate.symbol)
+    try:
+        import yfinance as yf
+
+        info = yf.Ticker(candidate.symbol).get_info()
+        name_en = str(info.get("shortName") or info.get("longName") or display.name_en or candidate.symbol)
+    except Exception:
+        name_en = display.name_en if candidate.asset_type == "stock" else candidate.symbol.replace("-USD", "")
 
     fig, ax = plt.subplots(figsize=(12, 7))
     ax.plot(chart.index, chart["close"], label="4h close", linewidth=1.8)
@@ -369,7 +373,7 @@ def plot_crypto_candidate(
     ax.axhline(candidate.high_52w, color="tab:purple", linestyle="--", linewidth=1, label="52-week high")
     ax.axhspan(candidate.buy_zone_low, candidate.buy_zone_high, color="tab:green", alpha=0.16, label="potential buy zone")
     ax.axhline(candidate.stop_reference, color="tab:red", linestyle=":", linewidth=1, label="stop reference")
-    ax.set_title(format_chart_title(candidate.symbol, name_zh, name_en, "4小時技術分析"))
+    ax.set_title(format_chart_title(candidate.symbol, name_en, "4h Technical"))
     ax.set_ylabel("Price")
     ax.legend(loc="upper right", fontsize=8)
     ax.grid(True, alpha=0.25)
@@ -383,8 +387,8 @@ def plot_crypto_candidate(
     )
     fig.autofmt_xdate()
     fig.tight_layout()
-    add_logo_to_axes(ax, logo_url)
-    path = output_dir / chart_filename_zh(name_zh, candidate.symbol, "四小時")
+    add_logo_to_axes(ax, candidate.symbol, asset_type=candidate.asset_type, logo_url=display.logo_url)
+    path = output_dir / chart_filename_en(name_en, candidate.symbol, "4h")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return str(path)

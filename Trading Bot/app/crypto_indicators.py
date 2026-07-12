@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .asset_display import AssetDisplayInfo, add_logo_to_axes, chart_filename_zh, configure_cjk_font, format_chart_title
+from .asset_display import AssetDisplayInfo, add_logo_to_axes, chart_filename_en, configure_cjk_font, format_chart_title
 from .market_scanner import estimate_buy_zone, normalize_history
 
 EMA_FAST = 20
@@ -214,7 +214,6 @@ def plot_crypto_technical_chart(
         return None
     latest, ema20, ema50, buy_low, buy_high, stop_reference = buy_zone
 
-    name_zh = display.name_zh if display else symbol
     name_en = display.name_en if display else symbol
     logo_url = display.logo_url if display else ""
 
@@ -239,7 +238,7 @@ def plot_crypto_technical_chart(
     if len(oversold_hits):
         price_ax.scatter(oversold_hits, chart.loc[oversold_hits, "close"], color="green", marker="^", s=36, label="RSI oversold")
 
-    price_ax.set_title(format_chart_title(symbol, name_zh, name_en, "加密貨幣日線技術分析"))
+    price_ax.set_title(format_chart_title(symbol, name_en, "Crypto Daily Technical"))
     price_ax.set_ylabel("Price")
     price_ax.grid(True, alpha=0.25)
     price_ax.legend(loc="upper right", fontsize=8)
@@ -275,13 +274,12 @@ def plot_crypto_technical_chart(
 
     fig.autofmt_xdate()
     fig.tight_layout()
-    add_logo_to_axes(price_ax, logo_url)
-    path = output_dir / chart_filename_zh(name_zh, symbol, "技術分析")
+    add_logo_to_axes(price_ax, symbol, asset_type="crypto", logo_url=logo_url)
+    path = output_dir / chart_filename_en(name_en, symbol, "technical")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return CryptoChartSummary(
         symbol=symbol,
-        name_zh=name_zh,
         name_en=name_en,
         latest_price=round(latest, 6),
         ema20=round(ema20, 6),

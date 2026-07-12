@@ -12,11 +12,10 @@ import requests
 
 from .asset_display import (
     add_logo_to_axes,
-    chart_filename_zh,
+    chart_filename_en,
     configure_cjk_font,
     crypto_logo_url_from_symbol,
     format_chart_title,
-    load_stock_zh_names,
     resolve_crypto_display,
     resolve_stock_display,
     stock_logo_url,
@@ -379,7 +378,7 @@ def evaluate_daily_candidate(
         return None
 
     buy_low, buy_high, stop_reference = estimate_buy_zone(latest, ma10, ma20, ma50)
-    name_zh = asset.name_zh or asset.name
+    name_zh = asset.name
     return PlatformCandidate(
         symbol=asset.symbol,
         name=asset.name,
@@ -517,7 +516,6 @@ def plot_daily_candidate(candidate: PlatformCandidate, daily_history: pd.DataFra
     chart["ma50"] = chart["close"].rolling(50).mean()
 
     display = resolve_stock_display(candidate.symbol, candidate.name)
-    name_zh = candidate.name_zh or display.name_zh
     name_en = candidate.name or display.name_en
     logo_url = display.logo_url
 
@@ -528,7 +526,7 @@ def plot_daily_candidate(candidate: PlatformCandidate, daily_history: pd.DataFra
     ax.axhline(candidate.high_52w, color="tab:purple", linestyle="--", linewidth=1, label="52-week high")
     ax.axhspan(candidate.buy_zone_low, candidate.buy_zone_high, color="tab:green", alpha=0.16, label="potential buy zone")
     ax.axhline(candidate.stop_reference, color="tab:red", linestyle=":", linewidth=1, label="stop reference")
-    ax.set_title(format_chart_title(candidate.symbol, name_zh, name_en, "日線技術分析"))
+    ax.set_title(format_chart_title(candidate.symbol, name_en, "Daily Technical"))
     ax.set_ylabel("Price")
     ax.legend(loc="upper right", fontsize=8)
     ax.grid(True, alpha=0.25)
@@ -542,8 +540,8 @@ def plot_daily_candidate(candidate: PlatformCandidate, daily_history: pd.DataFra
     )
     fig.autofmt_xdate()
     fig.tight_layout()
-    add_logo_to_axes(ax, logo_url)
-    path = output_dir / chart_filename_zh(name_zh, candidate.symbol, "日線")
+    add_logo_to_axes(ax, candidate.symbol, asset_type="stock", logo_url=logo_url)
+    path = output_dir / chart_filename_en(name_en, candidate.symbol, "daily")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return str(path)
@@ -631,13 +629,13 @@ def main() -> int:
     print(f"Crypto candidates: {len(crypto_candidates)} -> {crypto_csv}")
     for candidate in crypto_candidates:
         print(
-            f"  {candidate.symbol} {candidate.name_zh} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
+            f"  {candidate.symbol} {candidate.name} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
             f"buy_zone={candidate.buy_zone_low}-{candidate.buy_zone_high}"
         )
     print(f"Crypto chart summaries: {len(crypto_chart_summaries)} -> {output_dir / 'crypto_chart_summary.csv'}")
     for summary in crypto_chart_summaries:
         print(
-            f"  {summary.symbol} {summary.name_zh} latest={summary.latest_price} "
+            f"  {summary.symbol} {summary.name_en} latest={summary.latest_price} "
             f"buy_zone={summary.buy_zone_low}-{summary.buy_zone_high} stop={summary.stop_reference}"
         )
     print(f"Crypto alerts: {len(crypto_alerts)} -> {output_dir / 'crypto_alerts.csv'}")
@@ -646,7 +644,7 @@ def main() -> int:
     print(f"US stock candidates: {len(stock_candidates)} -> {stock_csv} (platform={stock_platform})")
     for candidate in stock_candidates:
         print(
-            f"  {candidate.symbol} {candidate.name_zh} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
+            f"  {candidate.symbol} {candidate.name} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
             f"buy_zone={candidate.buy_zone_low}-{candidate.buy_zone_high}"
         )
     print("Not financial advice. Use this as a watchlist generator and validate risk before trading.")

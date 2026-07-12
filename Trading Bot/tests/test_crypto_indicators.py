@@ -87,14 +87,14 @@ class CryptoIndicatorTests(unittest.TestCase):
         from app.asset_display import AssetDisplayInfo
         from app.crypto_indicators import plot_crypto_technical_chart
 
-        display = AssetDisplayInfo(symbol="BTC", name_en="Bitcoin", name_zh="比特币", logo_url="")
+        display = AssetDisplayInfo(symbol="BTC", name_en="Bitcoin", name_zh="Bitcoin", logo_url="")
         with TemporaryDirectory() as tmp:
             summary = plot_crypto_technical_chart("BTC", make_history(), Path(tmp), display=display)
             self.assertIsNotNone(summary)
             assert summary is not None
-            self.assertEqual(summary.name_zh, "比特币")
             self.assertEqual(summary.name_en, "Bitcoin")
             self.assertTrue(Path(summary.chart_path).exists())
+            self.assertIn("Bitcoin", summary.chart_path)
 
     def test_bollinger_bandwidth_positive(self) -> None:
         close = pd.Series(np.linspace(100, 120, 40))
