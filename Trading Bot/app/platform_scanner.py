@@ -564,6 +564,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--crypto-deep-scan-limit", type=int, default=DEFAULT_CRYPTO_DEEP_SCAN_LIMIT)
     parser.add_argument("--stock-universe-size", type=int, default=DEFAULT_STOCK_UNIVERSE_SIZE)
     parser.add_argument("--no-plots", action="store_true")
+    parser.add_argument("--email", default="", help="Email address to send the HTML report and zip attachment.")
     parser.add_argument("--log-level", default="INFO")
     return parser.parse_args()
 
@@ -648,6 +649,24 @@ def main() -> int:
             f"buy_zone={candidate.buy_zone_low}-{candidate.buy_zone_high}"
         )
     print("Not financial advice. Use this as a watchlist generator and validate risk before trading.")
+
+    if args.email.strip():
+        from .report_email import create_report_zip, generate_html_report, send_report_email
+
+        report_path = generate_html_report(output_dir)
+        zip_path = create_report_zip(output_dir, report_path)
+        try:
+            send_report_email(args.email.strip(), report_path, zip_path, len(stock_candidates), len(crypto_candidates))
+            print(f"Report emailed to {args.email.strip()}")
+        except Exception as exc:
+            print(f"Report generated at {report_path}")
+            print(f"Zip package generated at {zip_path}")
+            print(f"Email was not sent: {exc}")
+            print("Configure SMTP_USER and SMTP_PASSWORD in your environment to enable email delivery.")
+            return 1
+        print(f"Report: {report_path}")
+        print(f"Zip: {zip_path}")
+
     return 0
 
 
