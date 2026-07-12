@@ -70,7 +70,8 @@ python -m app.platform_scanner --output-dir platform_output
   - `platform_output/crypto_candidates.csv`
   - `platform_output/us_stocks_candidates.csv`
   - `platform_output/crypto_alerts.csv`
-  - `platform_output/crypto_charts/` (EMA/RSI/Bollinger/OBV technical charts)
+  - `platform_output/crypto_chart_summary.csv` (buy zone per charted crypto)
+  - `platform_output/crypto_charts/` (EMA/RSI/Bollinger/OBV technical charts with buy zone)
   - `platform_output/us_stock_charts/`
 
 Crypto technical chart spec:
@@ -79,6 +80,7 @@ Crypto technical chart spec:
 - Bollinger Bands 20,2 with shaded channel
 - OBV with 21-period EMA in a separate pane
 - Alerts for EMA 20/50 cross, Bollinger squeeze, and RSI overbought/oversold
+- Suggested buy zone between EMA 50 and EMA 20, plus EMA 50 stop reference on crypto charts
 
 Set your Finnhub key in `.env`:
 

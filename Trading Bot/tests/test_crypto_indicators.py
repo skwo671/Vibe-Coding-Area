@@ -9,6 +9,7 @@ from app.crypto_indicators import (
     BB_SQUEEZE_PERCENTILE,
     RSI_OVERSOLD,
     bollinger_bandwidth,
+    compute_crypto_buy_zone,
     detect_crypto_alerts,
     enrich_crypto_indicators,
     ema,
@@ -68,6 +69,16 @@ class CryptoIndicatorTests(unittest.TestCase):
         chart.loc[chart.index[-1], "rsi14"] = RSI_OVERSOLD
         alerts = detect_crypto_alerts("BTC", chart)
         self.assertTrue(any(alert.alert_type == "rsi_oversold" for alert in alerts))
+
+    def test_compute_crypto_buy_zone_uses_ema20_and_ema50(self) -> None:
+        chart = enrich_crypto_indicators(make_history())
+        result = compute_crypto_buy_zone(chart)
+        self.assertIsNotNone(result)
+        assert result is not None
+        latest, ema20, ema50, buy_low, buy_high, stop = result
+        self.assertGreater(latest, 0)
+        self.assertLessEqual(buy_low, buy_high)
+        self.assertLess(stop, ema50)
 
     def test_bollinger_bandwidth_positive(self) -> None:
         close = pd.Series(np.linspace(100, 120, 40))

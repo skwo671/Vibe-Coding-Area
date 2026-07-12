@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .market_scanner import normalize_history
+from .market_scanner import estimate_buy_zone, normalize_history
 
 EMA_FAST = 20
 EMA_MID = 50
@@ -28,6 +28,18 @@ class CryptoAlert:
     message: str
     triggered_at: str
     value: float
+
+
+@dataclass(frozen=True)
+class CryptoChartSummary:
+    symbol: str
+    latest_price: float
+    ema20: float
+    ema50: float
+    buy_zone_low: float
+    buy_zone_high: float
+    stop_reference: float
+    chart_path: str = ""
 
 
 def ema(series: pd.Series, length: int) -> pd.Series:
@@ -82,6 +94,19 @@ def enrich_crypto_indicators(frame: pd.DataFrame) -> pd.DataFrame:
     chart["obv"] = obv(close, chart["volume"])
     chart["obv_ema21"] = ema(chart["obv"], OBV_EMA_LENGTH)
     return chart
+
+
+def compute_crypto_buy_zone(chart: pd.DataFrame) -> tuple[float, float, float, float, float, float] | None:
+    if chart.empty or len(chart) < EMA_MID:
+        return None
+    latest_row = chart.iloc[-1]
+    if any(pd.isna(latest_row[column]) for column in ("close", "ema20", "ema50")):
+        return None
+    latest = float(latest_row["close"])
+    ema20 = float(latest_row["ema20"])
+    ema50 = float(latest_row["ema50"])
+    buy_low, buy_high, stop_reference = estimate_buy_zone(latest, ema20, ema20, ema50)
+    return latest, ema20, ema50, buy_low, buy_high, stop_reference
 
 
 def _latest_timestamp(index: pd.Index) -> str:
@@ -164,7 +189,7 @@ def detect_crypto_alerts(symbol: str, chart: pd.DataFrame) -> list[CryptoAlert]:
     return alerts
 
 
-def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output_dir: Path) -> str:
+def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output_dir: Path) -> CryptoChartSummary | None:
     import matplotlib
 
     matplotlib.use("Agg")
@@ -173,7 +198,12 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
     output_dir.mkdir(parents=True, exist_ok=True)
     chart = enrich_crypto_indicators(daily_history).tail(180)
     if chart.empty or "close" not in chart:
-        return ""
+        return None
+
+    buy_zone = compute_crypto_buy_zone(chart)
+    if buy_zone is None:
+        return None
+    latest, ema20, ema50, buy_low, buy_high, stop_reference = buy_zone
 
     fig, axes = plt.subplots(3, 1, figsize=(13, 11), sharex=True, gridspec_kw={"height_ratios": [3, 1.2, 1.2]})
     price_ax, rsi_ax, obv_ax = axes
@@ -186,6 +216,8 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
     price_ax.plot(chart.index, chart["bb_upper"], label="BB Upper", color="steelblue", linewidth=0.9, linestyle="--")
     price_ax.plot(chart.index, chart["bb_lower"], label="BB Lower", color="steelblue", linewidth=0.9, linestyle="--")
     price_ax.fill_between(chart.index, chart["bb_lower"], chart["bb_upper"], color="steelblue", alpha=0.12)
+    price_ax.axhspan(buy_low, buy_high, color="tab:green", alpha=0.18, label="potential buy zone")
+    price_ax.axhline(stop_reference, color="tab:red", linestyle=":", linewidth=1.2, label="stop reference")
 
     overbought_hits = chart.index[chart["rsi14"] >= RSI_OVERBOUGHT]
     oversold_hits = chart.index[chart["rsi14"] <= RSI_OVERSOLD]
@@ -198,6 +230,15 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
     price_ax.set_ylabel("Price")
     price_ax.grid(True, alpha=0.25)
     price_ax.legend(loc="upper left", fontsize=8)
+    price_ax.text(
+        0.01,
+        0.02,
+        f"Buy zone: {buy_low:.6f} - {buy_high:.6f}\n"
+        f"Latest: {latest:.6f} | Stop ref: {stop_reference:.6f}",
+        transform=price_ax.transAxes,
+        bbox={"facecolor": "white", "alpha": 0.82, "edgecolor": "none"},
+        fontsize=9,
+    )
 
     rsi_ax.plot(chart.index, chart["rsi14"], label="RSI 14", color="purple", linewidth=1.2)
     rsi_ax.axhline(RSI_OVERBOUGHT, color="red", linestyle="--", linewidth=1)
@@ -225,7 +266,24 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
     path = output_dir / f"{safe_symbol}_technical.png"
     fig.savefig(path, dpi=150)
     plt.close(fig)
-    return str(path)
+    return CryptoChartSummary(
+        symbol=symbol,
+        latest_price=round(latest, 6),
+        ema20=round(ema20, 6),
+        ema50=round(ema50, 6),
+        buy_zone_low=round(buy_low, 6),
+        buy_zone_high=round(buy_high, 6),
+        stop_reference=round(stop_reference, 6),
+        chart_path=str(path),
+    )
+
+
+def write_crypto_chart_summary_csv(summaries: list[CryptoChartSummary], output_path: Path) -> Path:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    columns = [field.name for field in fields(CryptoChartSummary)]
+    rows = [asdict(summary) for summary in summaries]
+    pd.DataFrame(rows, columns=columns).to_csv(output_path, index=False)
+    return output_path
 
 
 def write_crypto_alerts_csv(alerts: list[CryptoAlert], output_path: Path) -> Path:
