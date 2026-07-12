@@ -31,6 +31,63 @@ python -m app.main
 
 The bot subscribes to quotes, computes SMA fast/slow, and places market orders on crossovers, respecting max position and stop/take risk limits.
 
+#### Crypto and US Stock Opportunity Scanner
+Use the scanner to build a watchlist of crypto and US stocks that match all of these conditions:
+- A 52-week high occurred within the last 7 days.
+- The latest 4-hour close is above MA20 and MA50.
+- Market cap is greater than 100M USD.
+- The trailing 7-day turnover rate is at least 5%.
+
+```bash
+python -m app.market_scanner
+```
+
+Useful options:
+```bash
+python -m app.market_scanner --crypto BTC-USD,ETH-USD,SOL-USD --stocks NVDA,MSFT,AAPL
+python -m app.market_scanner --weekly-turnover-min 0.05
+python -m app.market_scanner --output-dir scanner_output
+python -m app.market_scanner --sample-data
+```
+
+The scanner writes `scanner_output/candidates.csv`. For crypto candidates, it also writes a chart showing the 4-hour close, MA10/MA20/MA50, the latest 52-week high, an approximate buy zone near the MA20-MA50 pullback area, and a stop reference below MA50.
+
+Market data is fetched from Yahoo Finance via `yfinance` (daily OHLCV, 4-hour OHLCV, and market cap). This is convenient for a watchlist scan, but Yahoo does not provide a single API to screen the entire market at once, so the scanner works from a symbol list you provide or from the built-in defaults.
+
+This scanner is for watchlist generation only and is not financial advice.
+
+#### Platform Scanner (CoinGecko + Finnhub/Yahoo, daily candles)
+For broader market coverage with separate crypto and US stock outputs:
+
+```bash
+python -m app.platform_scanner --output-dir platform_output
+```
+
+- Crypto universe: CoinGecko top market-cap coins (default 500)
+- US stock universe: Finnhub screener when `FINNHUB_API_KEY` is set, otherwise S&P 500 via Yahoo Finance
+- Timeframe: daily (1d) candles with MA20/MA50, 52-week high, and 7-day turnover filters
+- Outputs:
+  - `platform_output/crypto_candidates.csv`
+  - `platform_output/us_stocks_candidates.csv`
+  - `platform_output/crypto_alerts.csv`
+  - `platform_output/crypto_chart_summary.csv` (buy zone per charted crypto)
+  - `platform_output/crypto_charts/` (EMA/RSI/Bollinger/OBV technical charts with buy zone)
+  - `platform_output/us_stock_charts/`
+
+Crypto technical chart spec:
+- EMA 20 (green), EMA 50 (orange), EMA 200 (red, bold)
+- RSI 14 with 70/30 overbought/oversold markers
+- Bollinger Bands 20,2 with shaded channel
+- OBV with 21-period EMA in a separate pane
+- Alerts for EMA 20/50 cross, Bollinger squeeze, and RSI overbought/oversold
+- Suggested buy zone between EMA 50 and EMA 20, plus EMA 50 stop reference on crypto charts
+
+Set your Finnhub key in `.env`:
+
+```bash
+FINNHUB_API_KEY=your_key_here
+```
+
 #### Notes
 - Use at your own risk. Market orders can fill at unfavorable prices.
 - Backtest thoroughly before going live. This sample is for education only.
