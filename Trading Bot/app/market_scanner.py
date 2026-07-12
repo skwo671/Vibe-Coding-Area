@@ -11,6 +11,7 @@ import pandas as pd
 
 from .asset_display import (
     add_logo_to_axes,
+    chart_filename_zh,
     configure_cjk_font,
     crypto_logo_url_from_symbol,
     format_chart_title,
@@ -361,7 +362,6 @@ def plot_crypto_candidate(
     logo_url = crypto_logo_url_from_symbol(candidate.symbol)
 
     fig, ax = plt.subplots(figsize=(12, 7))
-    add_logo_to_axes(ax, logo_url)
     ax.plot(chart.index, chart["close"], label="4h close", linewidth=1.8)
     ax.plot(chart.index, chart["ma10"], label="MA10", linewidth=1.1)
     ax.plot(chart.index, chart["ma20"], label="MA20", linewidth=1.1)
@@ -383,9 +383,9 @@ def plot_crypto_candidate(
     )
     fig.autofmt_xdate()
     fig.tight_layout()
-
-    path = output_dir / f"{candidate.symbol.replace('-', '_').replace('.', '_')}_setup.png"
-    fig.savefig(path, dpi=150)
+    add_logo_to_axes(ax, logo_url)
+    path = output_dir / chart_filename_zh(name_zh, candidate.symbol, "四小時")
+    fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return str(path)
 

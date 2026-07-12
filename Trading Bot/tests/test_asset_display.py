@@ -5,8 +5,10 @@ from unittest.mock import MagicMock, patch
 
 from app.asset_display import (
     AssetDisplayInfo,
+    chart_filename_zh,
     crypto_logo_url_from_symbol,
     format_chart_title,
+    load_logo_image,
     load_stock_zh_names,
     resolve_crypto_display,
     resolve_stock_display,
@@ -52,6 +54,18 @@ class AssetDisplayTests(unittest.TestCase):
         client._get.return_value = {"localization": {"zh": "以太坊"}, "name": "Ethereum"}
         display = resolve_crypto_display("ETH", "Ethereum", coin_id="ethereum", coingecko_client=client)
         self.assertEqual(display.name_zh, "以太坊")
+
+    def test_chart_filename_zh_uses_chinese_name(self) -> None:
+        self.assertEqual(chart_filename_zh("维萨", "V", "日線"), "维萨_日線.png")
+
+    def test_chart_filename_zh_falls_back_to_symbol(self) -> None:
+        self.assertEqual(chart_filename_zh("", "BTC", "技術分析"), "BTC_技術分析.png")
+
+    def test_load_logo_image_supports_jpeg(self) -> None:
+        image = load_logo_image("https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/V.png")
+        self.assertIsNotNone(image)
+        assert image is not None
+        self.assertGreater(image.size, 0)
 
     def test_resolve_crypto_display_falls_back_to_english_name(self) -> None:
         display = resolve_crypto_display("UNKNOWN", "Unknown Coin")

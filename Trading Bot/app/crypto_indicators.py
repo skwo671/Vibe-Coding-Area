@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .asset_display import AssetDisplayInfo, add_logo_to_axes, configure_cjk_font, format_chart_title
+from .asset_display import AssetDisplayInfo, add_logo_to_axes, chart_filename_zh, configure_cjk_font, format_chart_title
 from .market_scanner import estimate_buy_zone, normalize_history
 
 EMA_FAST = 20
@@ -221,7 +221,6 @@ def plot_crypto_technical_chart(
     fig, axes = plt.subplots(3, 1, figsize=(13, 11), sharex=True, gridspec_kw={"height_ratios": [3, 1.2, 1.2]})
     price_ax, rsi_ax, obv_ax = axes
 
-    add_logo_to_axes(price_ax, logo_url)
     price_ax.plot(chart.index, chart["close"], label="Close", color="black", linewidth=1.5)
     price_ax.plot(chart.index, chart["ema20"], label="EMA 20", color="green", linewidth=1.2)
     price_ax.plot(chart.index, chart["ema50"], label="EMA 50", color="orange", linewidth=1.2)
@@ -276,9 +275,9 @@ def plot_crypto_technical_chart(
 
     fig.autofmt_xdate()
     fig.tight_layout()
-    safe_symbol = symbol.replace("-", "_").replace(".", "_")
-    path = output_dir / f"{safe_symbol}_technical.png"
-    fig.savefig(path, dpi=150)
+    add_logo_to_axes(price_ax, logo_url)
+    path = output_dir / chart_filename_zh(name_zh, symbol, "技術分析")
+    fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return CryptoChartSummary(
         symbol=symbol,

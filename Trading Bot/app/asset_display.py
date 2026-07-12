@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 
+import numpy as np
 import requests
 
 STOCK_NAMES_ZH_PATH = Path(__file__).resolve().parent.parent / "data" / "stock_names_zh.json"
@@ -131,25 +133,50 @@ def format_chart_title(symbol: str, name_zh: str, name_en: str, suffix: str = ""
     return title
 
 
-def add_logo_to_axes(ax, logo_url: str, zoom: float = 0.16) -> None:
+def chart_filename_zh(name_zh: str, symbol: str, chart_type: str) -> str:
+    base = (name_zh or symbol).strip()
+    safe = re.sub(r'[\\/:*?"<>|\s]+', "_", base).strip("._")
+    if not safe:
+        safe = symbol.replace(".", "_").replace("-", "_")
+    return f"{safe}_{chart_type}.png"
+
+
+def load_logo_image(logo_url: str) -> np.ndarray | None:
     if not logo_url:
+        return None
+    try:
+        from PIL import Image
+
+        response = requests.get(logo_url, timeout=15, headers={"User-Agent": "MarketScanner/1.0"})
+        response.raise_for_status()
+        image = Image.open(BytesIO(response.content))
+        if image.mode not in ("RGB", "RGBA"):
+            image = image.convert("RGBA")
+        return np.asarray(image)
+    except Exception as exc:
+        logging.getLogger("asset_display").warning("Failed to load logo from %s: %s", logo_url, exc)
+        return None
+
+
+def add_logo_to_axes(ax, logo_url: str, zoom: float = 0.2) -> None:
+    image = load_logo_image(logo_url)
+    if image is None:
         return
     try:
-        import matplotlib.pyplot as plt
         from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
-        response = requests.get(logo_url, timeout=15)
-        response.raise_for_status()
-        image = plt.imread(BytesIO(response.content))
         image_box = OffsetImage(image, zoom=zoom)
         annotation = AnnotationBbox(
             image_box,
             (0.02, 0.98),
             xycoords="axes fraction",
-            frameon=False,
+            frameon=True,
+            pad=0.15,
+            bboxprops={"facecolor": "white", "edgecolor": "none", "alpha": 0.9},
             box_alignment=(0, 1),
-            zorder=5,
+            zorder=1000,
         )
+        annotation.set_clip_on(False)
         ax.add_artist(annotation)
     except Exception as exc:
-        logging.getLogger("asset_display").warning("Failed to load logo from %s: %s", logo_url, exc)
+        logging.getLogger("asset_display").warning("Failed to place logo from %s: %s", logo_url, exc)
