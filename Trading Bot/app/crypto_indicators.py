@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from .asset_display import AssetDisplayInfo, add_logo_to_axes, configure_cjk_font, format_chart_title
 from .market_scanner import estimate_buy_zone, normalize_history
 
 EMA_FAST = 20
@@ -39,6 +40,8 @@ class CryptoChartSummary:
     buy_zone_low: float
     buy_zone_high: float
     stop_reference: float
+    name_zh: str = ""
+    name_en: str = ""
     chart_path: str = ""
 
 
@@ -189,12 +192,18 @@ def detect_crypto_alerts(symbol: str, chart: pd.DataFrame) -> list[CryptoAlert]:
     return alerts
 
 
-def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output_dir: Path) -> CryptoChartSummary | None:
+def plot_crypto_technical_chart(
+    symbol: str,
+    daily_history: pd.DataFrame,
+    output_dir: Path,
+    display: AssetDisplayInfo | None = None,
+) -> CryptoChartSummary | None:
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    configure_cjk_font()
     output_dir.mkdir(parents=True, exist_ok=True)
     chart = enrich_crypto_indicators(daily_history).tail(180)
     if chart.empty or "close" not in chart:
@@ -205,9 +214,14 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
         return None
     latest, ema20, ema50, buy_low, buy_high, stop_reference = buy_zone
 
+    name_zh = display.name_zh if display else symbol
+    name_en = display.name_en if display else symbol
+    logo_url = display.logo_url if display else ""
+
     fig, axes = plt.subplots(3, 1, figsize=(13, 11), sharex=True, gridspec_kw={"height_ratios": [3, 1.2, 1.2]})
     price_ax, rsi_ax, obv_ax = axes
 
+    add_logo_to_axes(price_ax, logo_url)
     price_ax.plot(chart.index, chart["close"], label="Close", color="black", linewidth=1.5)
     price_ax.plot(chart.index, chart["ema20"], label="EMA 20", color="green", linewidth=1.2)
     price_ax.plot(chart.index, chart["ema50"], label="EMA 50", color="orange", linewidth=1.2)
@@ -226,10 +240,10 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
     if len(oversold_hits):
         price_ax.scatter(oversold_hits, chart.loc[oversold_hits, "close"], color="green", marker="^", s=36, label="RSI oversold")
 
-    price_ax.set_title(f"{symbol} crypto technical view (daily)")
+    price_ax.set_title(format_chart_title(symbol, name_zh, name_en, "加密貨幣日線技術分析"))
     price_ax.set_ylabel("Price")
     price_ax.grid(True, alpha=0.25)
-    price_ax.legend(loc="upper left", fontsize=8)
+    price_ax.legend(loc="upper right", fontsize=8)
     price_ax.text(
         0.01,
         0.02,
@@ -253,7 +267,7 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
     obv_ax.plot(chart.index, chart["obv_ema21"], label="OBV EMA 21", color="darkorange", linewidth=1.1)
     obv_ax.set_ylabel("OBV")
     obv_ax.grid(True, alpha=0.25)
-    obv_ax.legend(loc="upper left", fontsize=8)
+    obv_ax.legend(loc="upper right", fontsize=8)
 
     alerts = detect_crypto_alerts(symbol, chart)
     if alerts:
@@ -268,6 +282,8 @@ def plot_crypto_technical_chart(symbol: str, daily_history: pd.DataFrame, output
     plt.close(fig)
     return CryptoChartSummary(
         symbol=symbol,
+        name_zh=name_zh,
+        name_en=name_en,
         latest_price=round(latest, 6),
         ema20=round(ema20, 6),
         ema50=round(ema50, 6),

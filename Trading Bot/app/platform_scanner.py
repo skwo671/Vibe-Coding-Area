@@ -10,6 +10,16 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from .asset_display import (
+    add_logo_to_axes,
+    configure_cjk_font,
+    crypto_logo_url_from_symbol,
+    format_chart_title,
+    load_stock_zh_names,
+    resolve_crypto_display,
+    resolve_stock_display,
+    stock_logo_url,
+)
 from .crypto_indicators import (
     CryptoAlert,
     CryptoChartSummary,
@@ -46,12 +56,15 @@ class UniverseAsset:
     market_cap: int
     external_id: str = ""
     volume_24h_usd: float = 0.0
+    name_zh: str = ""
+    logo_url: str = ""
 
 
 @dataclass(frozen=True)
 class PlatformCandidate:
     symbol: str
     name: str
+    name_zh: str
     asset_type: str
     platform: str
     data_source: str
@@ -160,6 +173,7 @@ class CoinGeckoClient:
                         market_cap=market_cap,
                         external_id=str(item["id"]),
                         volume_24h_usd=float(item.get("total_volume") or 0.0),
+                        logo_url=str(item.get("image") or ""),
                     )
                 )
         self._market_cache = assets
@@ -215,14 +229,17 @@ class FinnhubClient:
             symbol = str(item.get("symbol") or "").upper()
             if not symbol or market_cap <= market_cap_min:
                 continue
+            display = resolve_stock_display(symbol, str(item.get("description") or symbol))
             assets.append(
                 UniverseAsset(
                     symbol=symbol,
-                    name=str(item.get("description") or symbol),
+                    name=display.name_en,
                     asset_type="stock",
                     platform="finnhub",
                     market_cap=market_cap,
                     external_id=symbol,
+                    name_zh=display.name_zh,
+                    logo_url=display.logo_url,
                 )
             )
             if len(assets) >= limit:
@@ -281,14 +298,17 @@ class YahooFallbackStockClient:
             market_cap = self.market_cap(symbol)
             if market_cap is None or market_cap <= market_cap_min:
                 continue
+            display = resolve_stock_display(symbol)
             assets.append(
                 UniverseAsset(
                     symbol=symbol,
-                    name=symbol,
+                    name=display.name_en,
                     asset_type="stock",
                     platform="yahoo",
                     market_cap=market_cap,
                     external_id=symbol,
+                    name_zh=display.name_zh,
+                    logo_url=display.logo_url,
                 )
             )
         return assets
@@ -358,9 +378,11 @@ def evaluate_daily_candidate(
         return None
 
     buy_low, buy_high, stop_reference = estimate_buy_zone(latest, ma10, ma20, ma50)
+    name_zh = asset.name_zh or asset.name
     return PlatformCandidate(
         symbol=asset.symbol,
         name=asset.name,
+        name_zh=name_zh,
         asset_type=asset.asset_type,
         platform=asset.platform,
         data_source=data_source,
@@ -408,7 +430,14 @@ def scan_crypto_platform(
 
         chart_path = ""
         if chart_dir is not None:
-            summary = plot_crypto_technical_chart(asset.symbol, daily, chart_dir)
+            display = resolve_crypto_display(
+                asset.symbol,
+                asset.name,
+                coin_id=asset.external_id,
+                logo_url=asset.logo_url,
+                coingecko_client=client,
+            )
+            summary = plot_crypto_technical_chart(asset.symbol, daily, chart_dir, display=display)
             if summary is not None:
                 chart_summaries.append(summary)
                 chart_path = summary.chart_path
@@ -477,6 +506,7 @@ def plot_daily_candidate(candidate: PlatformCandidate, daily_history: pd.DataFra
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    configure_cjk_font()
     output_dir.mkdir(parents=True, exist_ok=True)
     chart = normalize_history(daily_history).tail(180).copy()
     if chart.empty or "close" not in chart:
@@ -485,16 +515,22 @@ def plot_daily_candidate(candidate: PlatformCandidate, daily_history: pd.DataFra
     chart["ma20"] = chart["close"].rolling(20).mean()
     chart["ma50"] = chart["close"].rolling(50).mean()
 
+    display = resolve_stock_display(candidate.symbol, candidate.name)
+    name_zh = candidate.name_zh or display.name_zh
+    name_en = candidate.name or display.name_en
+    logo_url = display.logo_url
+
     fig, ax = plt.subplots(figsize=(12, 7))
+    add_logo_to_axes(ax, logo_url)
     ax.plot(chart.index, chart["close"], label="Daily close", linewidth=1.8)
     ax.plot(chart.index, chart["ma20"], label="MA20", linewidth=1.1)
     ax.plot(chart.index, chart["ma50"], label="MA50", linewidth=1.1)
     ax.axhline(candidate.high_52w, color="tab:purple", linestyle="--", linewidth=1, label="52-week high")
     ax.axhspan(candidate.buy_zone_low, candidate.buy_zone_high, color="tab:green", alpha=0.16, label="potential buy zone")
     ax.axhline(candidate.stop_reference, color="tab:red", linestyle=":", linewidth=1, label="stop reference")
-    ax.set_title(f"{candidate.symbol} daily setup via {candidate.platform}")
+    ax.set_title(format_chart_title(candidate.symbol, name_zh, name_en, "日線技術分析"))
     ax.set_ylabel("Price")
-    ax.legend(loc="best")
+    ax.legend(loc="upper right", fontsize=8)
     ax.grid(True, alpha=0.25)
     ax.text(
         0.01,
@@ -596,13 +632,13 @@ def main() -> int:
     print(f"Crypto candidates: {len(crypto_candidates)} -> {crypto_csv}")
     for candidate in crypto_candidates:
         print(
-            f"  {candidate.symbol} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
+            f"  {candidate.symbol} {candidate.name_zh} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
             f"buy_zone={candidate.buy_zone_low}-{candidate.buy_zone_high}"
         )
     print(f"Crypto chart summaries: {len(crypto_chart_summaries)} -> {output_dir / 'crypto_chart_summary.csv'}")
     for summary in crypto_chart_summaries:
         print(
-            f"  {summary.symbol} latest={summary.latest_price} "
+            f"  {summary.symbol} {summary.name_zh} latest={summary.latest_price} "
             f"buy_zone={summary.buy_zone_low}-{summary.buy_zone_high} stop={summary.stop_reference}"
         )
     print(f"Crypto alerts: {len(crypto_alerts)} -> {output_dir / 'crypto_alerts.csv'}")
@@ -611,7 +647,7 @@ def main() -> int:
     print(f"US stock candidates: {len(stock_candidates)} -> {stock_csv} (platform={stock_platform})")
     for candidate in stock_candidates:
         print(
-            f"  {candidate.symbol} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
+            f"  {candidate.symbol} {candidate.name_zh} latest={candidate.latest_price} turnover={candidate.weekly_turnover_pct}% "
             f"buy_zone={candidate.buy_zone_low}-{candidate.buy_zone_high}"
         )
     print("Not financial advice. Use this as a watchlist generator and validate risk before trading.")

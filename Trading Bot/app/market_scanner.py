@@ -9,6 +9,14 @@ from typing import Iterable, Protocol
 import numpy as np
 import pandas as pd
 
+from .asset_display import (
+    add_logo_to_axes,
+    configure_cjk_font,
+    crypto_logo_url_from_symbol,
+    format_chart_title,
+    load_stock_zh_names,
+)
+
 
 DEFAULT_CRYPTO_SYMBOLS = (
     "BTC-USD",
@@ -338,6 +346,7 @@ def plot_crypto_candidate(
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    configure_cjk_font()
     output_dir.mkdir(parents=True, exist_ok=True)
     df = normalize_history(provider.history(candidate.symbol, period="90d", interval="4h"))
     if "close" not in df:
@@ -347,7 +356,12 @@ def plot_crypto_candidate(
     chart["ma20"] = chart["close"].rolling(20).mean()
     chart["ma50"] = chart["close"].rolling(50).mean()
 
+    name_zh = load_stock_zh_names().get(candidate.symbol.upper(), candidate.symbol)
+    name_en = candidate.symbol
+    logo_url = crypto_logo_url_from_symbol(candidate.symbol)
+
     fig, ax = plt.subplots(figsize=(12, 7))
+    add_logo_to_axes(ax, logo_url)
     ax.plot(chart.index, chart["close"], label="4h close", linewidth=1.8)
     ax.plot(chart.index, chart["ma10"], label="MA10", linewidth=1.1)
     ax.plot(chart.index, chart["ma20"], label="MA20", linewidth=1.1)
@@ -355,9 +369,9 @@ def plot_crypto_candidate(
     ax.axhline(candidate.high_52w, color="tab:purple", linestyle="--", linewidth=1, label="52-week high")
     ax.axhspan(candidate.buy_zone_low, candidate.buy_zone_high, color="tab:green", alpha=0.16, label="potential buy zone")
     ax.axhline(candidate.stop_reference, color="tab:red", linestyle=":", linewidth=1, label="stop reference")
-    ax.set_title(f"{candidate.symbol} 4h setup: price above MA20/MA50")
+    ax.set_title(format_chart_title(candidate.symbol, name_zh, name_en, "4小時技術分析"))
     ax.set_ylabel("Price")
-    ax.legend(loc="best")
+    ax.legend(loc="upper right", fontsize=8)
     ax.grid(True, alpha=0.25)
     ax.text(
         0.01,

@@ -80,6 +80,22 @@ class CryptoIndicatorTests(unittest.TestCase):
         self.assertLessEqual(buy_low, buy_high)
         self.assertLess(stop, ema50)
 
+    def test_plot_crypto_technical_chart_returns_summary_with_names(self) -> None:
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from app.asset_display import AssetDisplayInfo
+        from app.crypto_indicators import plot_crypto_technical_chart
+
+        display = AssetDisplayInfo(symbol="BTC", name_en="Bitcoin", name_zh="比特币", logo_url="")
+        with TemporaryDirectory() as tmp:
+            summary = plot_crypto_technical_chart("BTC", make_history(), Path(tmp), display=display)
+            self.assertIsNotNone(summary)
+            assert summary is not None
+            self.assertEqual(summary.name_zh, "比特币")
+            self.assertEqual(summary.name_en, "Bitcoin")
+            self.assertTrue(Path(summary.chart_path).exists())
+
     def test_bollinger_bandwidth_positive(self) -> None:
         close = pd.Series(np.linspace(100, 120, 40))
         middle = close.rolling(20).mean()
