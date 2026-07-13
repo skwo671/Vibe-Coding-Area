@@ -40,7 +40,7 @@ def _pair_duplicate_score(a: np.ndarray, b: np.ndarray) -> float:
     corr = _correlation_score(a, b)
     tmpl = max(_multiscale_template_score(a, b), _multiscale_template_score(b, a))
     # Two repeated labels side-by-side: local match is strong, global halves differ.
-    if 0.68 <= tmpl <= 0.82 and corr < 0.15:
+    if 0.63 <= tmpl <= 0.88 and corr < 0.22:
         return tmpl
     # Near-perfect mirrored copies.
     if tmpl >= 0.95 and corr >= 0.9:

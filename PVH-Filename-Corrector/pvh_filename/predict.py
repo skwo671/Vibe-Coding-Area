@@ -3,10 +3,15 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from pvh_filename.actual_size import has_duplicate_pattern
+from pvh_filename.angle_heuristics import resolve_angle_suffix
 from pvh_filename.color_master import ColorMasterLookup, resolve_color_master
 from pvh_filename.dataset import build_records, records_to_dataframe, iter_image_paths
-from pvh_filename.filenames import build_correct_filename, format_angle_suffix, parse_suffix_components
+from pvh_filename.filenames import (
+    build_correct_filename,
+    needs_tds_prefix,
+    parse_suffix_components,
+    prefix_only_filename,
+)
 from pvh_filename.model import ClipEmbedder, HierarchicalClassifier, default_model_path
 from pvh_filename.ocr import extract_color_code, tesseract_status_message
 
@@ -35,6 +40,8 @@ def predict_renames(
     embeddings, valid_paths = embedder.encode_paths(paths)
     valid_set = set(valid_paths)
     valid_records = [r for r in image_records if str(r.path) in valid_set]
+    path_to_embedding = {p: embeddings[i] for i, p in enumerate(valid_paths)}
+
     classifier = load_classifier(model_dir)
     predicted_suffixes, predicted_kinds, confidences = classifier.predict(embeddings)
 
@@ -46,6 +53,8 @@ def predict_renames(
         color_name = ""
         suffix_source = "model"
         skip_reason = ""
+        embedding = path_to_embedding[str(record.path)]
+
         if predicted_kind == "color":
             color_code = extract_color_code(record.path) or ""
             if color_code:
@@ -69,15 +78,14 @@ def predict_renames(
             else:
                 predicted_suffix = ""
                 suffix_source = "ocr_not_found"
-                skip_reason = "OCR 讀唔到色號（請確認 Tesseract 已安裝，色卡數字清晰）"
+                skip_reason = "OCR 讀唔到色號"
         elif predicted_kind == "angle":
-            if has_duplicate_pattern(record.path):
-                predicted_suffix = "AS"
-                suffix_source = "duplicate_pattern"
-            else:
-                predicted_suffix = format_angle_suffix(predicted_suffix)
-                if predicted_suffix == "AS":
-                    suffix_source = "model_actual_size"
+            predicted_suffix, suffix_source = resolve_angle_suffix(
+                record.path,
+                predicted_suffix,
+                classifier,
+                embedding,
+            )
 
         view, color = parse_suffix_components(predicted_suffix)
         proposed_name = ""
@@ -96,6 +104,19 @@ def predict_renames(
             action = "rename" if confidence >= confidence_threshold else "review"
             if action == "review" and not skip_reason:
                 skip_reason = f"信心度太低 ({confidence:.2f})"
+
+        if needs_tds_prefix(record.path, record.folder_prefix):
+            if not proposed_name:
+                proposed_name = prefix_only_filename(record.folder_prefix, record.extension)
+                action = "rename"
+                suffix_source = "prefix_only"
+                if not skip_reason:
+                    skip_reason = "未能判斷後綴，僅加 TDS 前綴"
+            elif action == "review" and predicted_kind == "color" and not color_code:
+                proposed_name = prefix_only_filename(record.folder_prefix, record.extension)
+                action = "rename"
+                suffix_source = "prefix_only"
+                skip_reason = "OCR 讀唔到色號，僅加 TDS 前綴"
 
         results.append(
             {
@@ -144,19 +165,33 @@ def write_rename_report(rows: list[dict], output_csv: Path) -> None:
         writer.writerows(rows)
 
 
+def _unique_destination(src: Path, proposed_name: str, taken: set[str]) -> Path | None:
+    if not proposed_name:
+        return None
+    dst = src.with_name(proposed_name)
+    if dst.name == src.name:
+        return None
+    base = dst.stem
+    ext = dst.suffix
+    counter = 2
+    while dst.name in taken or (dst.exists() and dst.resolve() != src.resolve()):
+        dst = src.with_name(f"{base}_{counter}{ext}")
+        counter += 1
+    taken.add(dst.name)
+    return dst
+
+
 def apply_renames(rows: list[dict], dry_run: bool = True) -> list[dict]:
     applied: list[dict] = []
+    taken_names: set[str] = set()
     for row in rows:
         if row["action"] != "rename":
             continue
         src = Path(row["path"])
-        dst = src.with_name(row["proposed_name"])
-        if src.name == dst.name:
+        dst = _unique_destination(src, row["proposed_name"], taken_names)
+        if dst is None:
             continue
-        if dst.exists():
-            row = {**row, "status": "skipped_exists"}
-            applied.append(row)
-            continue
+        row = {**row, "proposed_name": dst.name}
         if not dry_run:
             src.rename(dst)
             row = {**row, "status": "renamed", "new_path": str(dst)}

@@ -10,6 +10,7 @@ import numpy as np
 import pytesseract
 
 COLOR_CODE_RE = re.compile(r"(?<!\d)(?:\d{3}[-\s]?\d{3}|\d{6})(?!\d)")
+DIGIT_RUN_RE = re.compile(r"\d{3,6}")
 
 _TESSERACT_CONFIGURED = False
 
@@ -66,24 +67,68 @@ def normalize_color_code(value: str) -> str:
     return digits
 
 
-def _ocr_text(image: np.ndarray) -> str:
-    config_base = "-c tessedit_char_whitelist=0123456789- "
+def _ocr_text(image: np.ndarray, *, digits_only: bool = True) -> str:
+    whitelist = "-c tessedit_char_whitelist=0123456789- " if digits_only else ""
     texts: list[str] = []
-    for psm in (6, 7, 11, 3):
-        texts.append(pytesseract.image_to_string(image, config=f"--psm {psm} {config_base}"))
+    for psm in (6, 7, 8, 11, 13, 3):
+        texts.append(pytesseract.image_to_string(image, config=f"--psm {psm} {whitelist}".strip()))
     return "\n".join(texts)
 
 
 def _candidate_regions(image: np.ndarray) -> list[np.ndarray]:
-    h, w = image.shape[:2]
+    height, width = image.shape[:2]
     regions = [image]
-    # Color cards often print the code along an edge or in a lower band.
-    for y0, y1 in ((0, h // 3), (h // 3, 2 * h // 3), (2 * h // 3, h), (0, h // 4)):
-        for x0, x1 in ((0, w // 2), (w // 2, w), (0, w)):
+    bands = (
+        (0, height),
+        (int(height * 0.35), height),
+        (int(height * 0.45), height),
+        (int(height * 0.55), height),
+        (0, int(height * 0.55)),
+        (height // 4, 3 * height // 4),
+    )
+    for y0, y1 in bands:
+        for x0, x1 in ((0, width), (0, width // 2), (width // 2, width), (width // 4, 3 * width // 4)):
             crop = image[y0:y1, x0:x1]
-            if crop.size > 0:
+            if crop.size > 0 and crop.shape[0] > 20 and crop.shape[1] > 20:
                 regions.append(crop)
     return regions
+
+
+def _preprocess_variants(image: np.ndarray) -> list[np.ndarray]:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+    scale = 3 if max(gray.shape[:2]) < 3000 else 2
+    gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+
+    variants = [gray]
+    denoised = cv2.bilateralFilter(gray, 9, 75, 75)
+    variants.append(denoised)
+
+    for src in (gray, denoised):
+        _, otsu = cv2.threshold(src, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        variants.extend([otsu, cv2.bitwise_not(otsu)])
+        adaptive = cv2.adaptiveThreshold(
+            src, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 9
+        )
+        variants.extend([adaptive, cv2.bitwise_not(adaptive)])
+
+    kernel = np.ones((2, 2), np.uint8)
+    for variant in list(variants):
+        variants.append(cv2.morphologyEx(variant, cv2.MORPH_CLOSE, kernel))
+
+    return variants
+
+
+def _extract_codes_from_text(text: str) -> list[str]:
+    found: list[str] = []
+    for match in COLOR_CODE_RE.finditer(text):
+        found.append(match.group(0))
+    if found:
+        return found
+    for match in DIGIT_RUN_RE.finditer(text):
+        digits = re.sub(r"\D", "", match.group(0))
+        if len(digits) == 6:
+            found.append(digits)
+    return found
 
 
 def extract_color_code(path: Path) -> str | None:
@@ -100,8 +145,9 @@ def extract_color_code(path: Path) -> str | None:
     try:
         for region in _candidate_regions(image):
             for variant in _preprocess_variants(region):
-                text = _ocr_text(variant)
-                candidates.extend(match.group(0) for match in COLOR_CODE_RE.finditer(text))
+                for digits_only in (True, False):
+                    text = _ocr_text(variant, digits_only=digits_only)
+                    candidates.extend(_extract_codes_from_text(text))
     except pytesseract.TesseractNotFoundError:
         return None
     except Exception:
@@ -112,17 +158,3 @@ def extract_color_code(path: Path) -> str | None:
 
     candidates.sort(key=lambda c: ("-" not in c and " " not in c, c))
     return normalize_color_code(candidates[0])
-
-
-def _preprocess_variants(image: np.ndarray) -> list[np.ndarray]:
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    scale = 2 if max(gray.shape[:2]) < 2500 else 1
-    if scale > 1:
-        gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-
-    denoised = cv2.bilateralFilter(gray, 9, 75, 75)
-    _, threshold = cv2.threshold(
-        denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-    )
-    inverted = cv2.bitwise_not(threshold)
-    return [gray, threshold, inverted]

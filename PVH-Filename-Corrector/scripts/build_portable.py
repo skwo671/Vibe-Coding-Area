@@ -83,6 +83,10 @@ def build_executable() -> Path:
         "--hidden-import",
         "pvh_filename.actual_size",
         "--hidden-import",
+        "pvh_filename.angle_heuristics",
+        "--hidden-import",
+        "pvh_filename.color_master",
+        "--hidden-import",
         "openpyxl",
         "--hidden-import",
         "cv2",
@@ -166,7 +170,7 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
   - 直接改名（已正確嘅圖片會跳過）
 
 功能：
-  - 角度相：CORNER / SIDE VIEW / FRONT&BACK / AS（Actual Size，兩個相同圖案）
+  - 角度相：CORNER / SIDE / FRONT / AS（Actual Size）
   - 對色相：OCR 讀色號 → 查 Archroma 色號表 → 改成 CWF_色名 / D65_色名
 
 注意：

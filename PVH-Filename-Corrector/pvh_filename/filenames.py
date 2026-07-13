@@ -36,6 +36,8 @@ ANGLE_VIEWS = {
 }
 
 ACTUAL_SIZE_LABELS = {"ACTUAL SIZE", "AS"}
+FRONT_BACK_LABELS = {"FRONT&BACK", "FRONT & BACK"}
+SIDE_VIEW_LABELS = {"SIDE VIEW", "SIDE"}
 
 PRODUCT_PREFIX_RE = re.compile(r"^\d{6}_[A-Z0-9]+G-\d{6}-\d{2}_.+?_\d+(?:ST|ND|RD|TH)$")
 TDS_MARKER = "_TDS"
@@ -169,7 +171,22 @@ def format_angle_suffix(view: str) -> str:
     view = normalize_token(view)
     if view in ACTUAL_SIZE_LABELS:
         return "AS"
+    if view in FRONT_BACK_LABELS:
+        return "FRONT"
+    if view in SIDE_VIEW_LABELS:
+        return "SIDE"
     return view
+
+
+def needs_tds_prefix(path: Path, folder_prefix: str) -> bool:
+    parsed = parse_filename(path)
+    current = normalize_token(strip_tds_artifact(parsed.product_prefix))
+    target = normalize_token(folder_prefix)
+    return current != target
+
+
+def prefix_only_filename(folder_prefix: str, extension: str) -> str:
+    return build_correct_filename(folder_prefix, "", extension)
 
 
 def build_correct_filename(prefix: str, suffix: str, extension: str) -> str:
@@ -177,6 +194,10 @@ def build_correct_filename(prefix: str, suffix: str, extension: str) -> str:
     view, color = parse_suffix_components(suffix)
     if view in ACTUAL_SIZE_LABELS and not color:
         suffix = "AS"
+    elif view in FRONT_BACK_LABELS and not color:
+        suffix = "FRONT"
+    elif view in SIDE_VIEW_LABELS and not color:
+        suffix = "SIDE"
     elif view in ANGLE_VIEWS and not color:
         suffix = format_angle_suffix(view)
     ext = extension if extension.startswith(".") else f".{extension}"
@@ -196,15 +217,12 @@ def is_likely_misnamed(path: Path, folder_prefix: str) -> bool:
     expected = build_correct_filename(folder_prefix, parsed.suffix, parsed.extension)
     if path.name == expected or path.name.upper() == expected.upper():
         return False
-    # ACTUAL SIZE and AS are equivalent suffixes.
-    if normalize_token(parsed.suffix) in ACTUAL_SIZE_LABELS:
-        alt = build_correct_filename(
-            folder_prefix,
-            "AS" if normalize_token(parsed.suffix) == "ACTUAL SIZE" else "ACTUAL SIZE",
-            parsed.extension,
-        )
-        if path.name.upper() == alt.upper():
-            return False
+    # ACTUAL SIZE / AS / FRONT / SIDE aliases
+    if normalize_token(parsed.suffix) in ACTUAL_SIZE_LABELS | FRONT_BACK_LABELS | {"FRONT"} | SIDE_VIEW_LABELS:
+        for alt_suffix in ("AS", "FRONT", "SIDE", "ACTUAL SIZE", "FRONT&BACK", "SIDE VIEW"):
+            alt = build_correct_filename(folder_prefix, alt_suffix, parsed.extension)
+            if path.name.upper() == alt.upper():
+                return False
     return True
 
 
