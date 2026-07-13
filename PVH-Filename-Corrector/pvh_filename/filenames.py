@@ -7,6 +7,9 @@ from pathlib import Path
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tif", ".tiff"}
 REFERENCE_EXTENSIONS = {".pdf", ".xls", ".xlsm", ".xlsx", ".doc", ".docx"} | IMAGE_EXTENSIONS
 
+# Skip tool/runtime folders when scanning a portable package root.
+SCAN_SKIP_DIRS = {"app", "models", ".venv", "__pycache__", ".git"}
+
 # Longest-first so multi-word view types match correctly.
 VIEW_TYPES = [
     "FRONT ON FABRIC",

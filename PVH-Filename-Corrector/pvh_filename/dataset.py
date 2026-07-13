@@ -7,6 +7,7 @@ import pandas as pd
 
 from pvh_filename.filenames import (
     IMAGE_EXTENSIONS,
+    SCAN_SKIP_DIRS,
     build_correct_filename,
     find_tds_prefix_in_folder,
     is_likely_misnamed,
@@ -33,11 +34,15 @@ class ImageRecord:
 
 def iter_image_paths(root: Path) -> list[Path]:
     paths: list[Path] = []
+    root = root.resolve()
     for path in root.rglob("*"):
-        if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS:
-            if path.name.startswith("~$") or path.name == ".DS_Store":
-                continue
-            paths.append(path)
+        if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
+            continue
+        if path.name.startswith("~$") or path.name == ".DS_Store":
+            continue
+        if SCAN_SKIP_DIRS.intersection(part.lower() for part in path.relative_to(root).parts[:-1]):
+            continue
+        paths.append(path)
     return sorted(paths)
 
 

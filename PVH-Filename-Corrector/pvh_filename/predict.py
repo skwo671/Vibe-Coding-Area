@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+from pvh_filename.color_master import ColorMasterLookup, resolve_color_master
 from pvh_filename.dataset import build_records, records_to_dataframe, iter_image_paths
 from pvh_filename.filenames import build_correct_filename, parse_suffix_components
 from pvh_filename.model import ClipEmbedder, HierarchicalClassifier, default_model_path
@@ -18,6 +19,7 @@ def predict_renames(
     model_dir: Path,
     confidence_threshold: float = 0.55,
     only_misnamed: bool = False,
+    color_master: ColorMasterLookup | None = None,
 ) -> list[dict]:
     records = build_records(data_root)
     if only_misnamed:
@@ -43,12 +45,22 @@ def predict_renames(
         suffix_source = "model"
         if predicted_kind == "color":
             color_code = extract_color_code(record.path) or ""
+            color_name = ""
             if color_code:
                 light_source, _ = parse_suffix_components(predicted_suffix)
                 if light_source not in {"CWF", "D65"}:
                     light_source = ""
-                predicted_suffix = f"{light_source}_{color_code}" if light_source else ""
-                suffix_source = "ocr_color_code"
+                if color_master:
+                    color_name = color_master.lookup_name(color_code) or ""
+                if color_name and light_source:
+                    predicted_suffix = f"{light_source}_{color_name}"
+                    suffix_source = "ocr+color_master"
+                elif color_code and light_source:
+                    predicted_suffix = f"{light_source}_{color_code}"
+                    suffix_source = "ocr_color_code"
+                else:
+                    predicted_suffix = ""
+                    suffix_source = "ocr_not_found"
             else:
                 predicted_suffix = ""
                 suffix_source = "ocr_not_found"
@@ -64,7 +76,9 @@ def predict_renames(
             if record.current_name == proposed_name or record.current_name.upper() == proposed_name.upper():
                 continue
 
-        if predicted_kind == "color" and not color_code:
+        if predicted_kind == "color" and (
+            not color_code or (color_master is not None and not color_name)
+        ):
             action = "review"
         else:
             action = "rename" if confidence >= confidence_threshold else "review"
@@ -79,6 +93,7 @@ def predict_renames(
                 "predicted_view": view,
                 "predicted_color": color,
                 "color_code": color_code,
+                "color_name": color_name,
                 "suffix_source": suffix_source,
                 "predicted_suffix": predicted_suffix,
                 "proposed_name": proposed_name,
@@ -100,6 +115,7 @@ def write_rename_report(rows: list[dict], output_csv: Path) -> None:
         "predicted_view",
         "predicted_color",
         "color_code",
+        "color_name",
         "suffix_source",
         "predicted_suffix",
         "proposed_name",
@@ -149,11 +165,18 @@ def rename_folder(
     confidence: float = 0.55,
     report_path: Path | None = None,
     write_report: bool = True,
+    color_master_path: Path | None = None,
 ) -> dict:
     folder = folder.resolve()
     report_path = report_path or (folder / "rename_report.csv")
+    color_master = resolve_color_master(folder, color_master_path)
 
-    rows = predict_renames(folder, model_dir, confidence_threshold=confidence)
+    rows = predict_renames(
+        folder,
+        model_dir,
+        confidence_threshold=confidence,
+        color_master=color_master,
+    )
     if write_report:
         write_rename_report(rows, report_path)
 
@@ -167,6 +190,8 @@ def rename_folder(
     return {
         "folder": str(folder),
         "report": str(report_path) if write_report else None,
+        "color_master": str(color_master.source) if color_master else None,
+        "color_master_entries": len(color_master) if color_master else 0,
         "total_images": len(list(iter_image_paths(folder))),
         "suggestions": len(rows),
         "auto_rename": len(rename_rows),

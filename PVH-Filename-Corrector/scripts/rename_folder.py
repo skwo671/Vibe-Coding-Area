@@ -56,6 +56,12 @@ def main() -> int:
     parser.add_argument("--auto-train-every", type=int, default=5, help="每運行 N 次自動更新模型")
     parser.add_argument("--training-data", type=Path, default=DEFAULT_TRAINING_DATA)
     parser.add_argument("--no-auto-train", action="store_true", help="今次唔計入/觸發自動訓練")
+    parser.add_argument(
+        "--color-master",
+        type=Path,
+        default=None,
+        help="Archroma 色號對照表 xlsx（預設自動搜尋資料夾內或 reference/）",
+    )
     args = parser.parse_args()
 
     folder = args.folder or default_target_folder()
@@ -74,6 +80,8 @@ def main() -> int:
 
     print(f"處理資料夾: {folder}")
     print(f"使用模型:   {args.model}")
+    if args.color_master:
+        print(f"色號對照表: {args.color_master}")
     print(f"模式:       {'直接改名' if args.apply else '只出報告（加 --apply 才改名）'}")
     if args.no_report:
         print("報告:       不輸出 CSV")
@@ -86,6 +94,7 @@ def main() -> int:
         confidence=args.confidence,
         report_path=args.report,
         write_report=not args.no_report,
+        color_master_path=args.color_master,
     )
 
     if not args.no_auto_train:

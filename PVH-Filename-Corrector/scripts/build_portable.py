@@ -81,7 +81,9 @@ def build_executable() -> Path:
         "--hidden-import",
         "pvh_filename.dataset",
         "--hidden-import",
-        "pvh_filename.runtime",
+        "pvh_filename.color_master",
+        "--hidden-import",
+        "openpyxl",
         "--hidden-import",
         "cv2",
         "--hidden-import",
@@ -95,6 +97,20 @@ def build_executable() -> Path:
 
 
 def write_launchers(portable: Path, exe_name: str) -> None:
+    work_dir = portable / "待改名圖片"
+    work_dir.mkdir(exist_ok=True)
+    (work_dir / "請將 TDS 參考檔同未改名圖片放喺呢度.txt").write_text(
+        """請將以下檔案放入此資料夾：
+  - 已改好名嘅 TDS 參考檔（檔名包含 _TDS，例如 xxx_TDS.pdf）
+  - 所有未改名的圖片
+  - （可選）Archroma 色號對照表 xlsx
+
+放好後，返回上一層雙擊 rename_here.bat 即可自動改名。
+對色圖片會 OCR 讀色號，再查表改成色名（例如 CWF_FAIRWAY GREEN）。
+""",
+        encoding="utf-8",
+    )
+
     bat = portable / "rename_here.bat"
     bat.write_text(
         f"""@echo off
@@ -103,12 +119,19 @@ cd /d "%~dp0"
 set HF_HOME=%~dp0models\\huggingface
 set TRANSFORMERS_OFFLINE=1
 set HF_HUB_OFFLINE=1
+
+set "TARGET=%~dp0"
+if exist "%~dp0待改名圖片\\" set "TARGET=%~dp0待改名圖片"
+
 echo ========================================
 echo   PVH 圖片檔名自動更正
 echo ========================================
 echo.
-app\\{exe_name} "%~dp0" ^
+echo 處理資料夾: %TARGET%
+echo.
+app\\{exe_name} "%TARGET%" ^
   --model "%~dp0models\\suffix_classifier" ^
+  --color-master "%~dp0reference\\Archroma_Color_Standard_Master_List_Shane.xlsx" ^
   --confidence 0.0 ^
   --apply ^
   --no-report ^
@@ -132,23 +155,27 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
 ================================
 
 使用方法：
-  1. 將整個 PVH-Rename-Portable 資料夾複製到要改名的圖片目錄
-  2. 把圖片（及 TDS 參考檔）放入此資料夾
+  1. 打開「待改名圖片」資料夾
+  2. 放入 TDS 參考檔（檔名含 _TDS）同所有未改名圖片
   3. 雙擊 rename_here.bat
 
+程式會自動：
+  - 從 TDS 檔讀取正確產品前綴
+  - 辨識每張圖係角度相定對色相
+  - 直接改名（已正確嘅圖片會跳過）
+
 功能：
-  - 直接改名（不輸出 rename_report.csv）
   - 角度相：CORNER / SIDE VIEW / FRONT&BACK / ACTUAL SIZE
-  - 對色相：CWF_色號 或 D65_色號（需 OCR 讀到色卡色號）
+  - 對色相：OCR 讀色號 → 查 Archroma 色號表 → 改成 CWF_色名 / D65_色名
 
 注意：
   - {clip_note}
   - 對色 OCR 需安裝 Tesseract：
     https://github.com/UB-Mannheim/tesseract/wiki
-  - 整個資料夾約 1.5-2 GB
+  - TDS 同圖片必須放喺同一個資料夾
 
 手動執行：
-  app\\{exe_name} "圖片資料夾" --model "models\\suffix_classifier" --apply --no-report
+  app\\{exe_name} "待改名圖片" --model "models\\suffix_classifier" --apply --no-report
 """,
         encoding="utf-8",
     )
@@ -209,6 +236,10 @@ def main() -> None:
 
     model_dir = ROOT / "models" / "suffix_classifier"
     shutil.copytree(model_dir, DIST / "models" / "suffix_classifier")
+
+    color_master = ROOT / "reference" / "Archroma_Color_Standard_Master_List_Shane.xlsx"
+    if color_master.exists():
+        shutil.copytree(ROOT / "reference", DIST / "reference")
 
     has_clip = False
     if bundle_clip:
