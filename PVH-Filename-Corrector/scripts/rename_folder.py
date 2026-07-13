@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from pvh_filename.auto_train import record_run_and_maybe_train
+from pvh_filename.ocr import tesseract_status_message
 from pvh_filename.predict import rename_folder
 from pvh_filename.runtime import (
     default_model_dir,
@@ -85,6 +86,9 @@ def main() -> int:
     print(f"模式:       {'直接改名' if args.apply else '只出報告（加 --apply 才改名）'}")
     if args.no_report:
         print("報告:       不輸出 CSV")
+    else:
+        print("報告:       待改名圖片/rename_report.csv")
+    print(tesseract_status_message())
     print()
 
     summary = rename_folder(

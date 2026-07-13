@@ -134,8 +134,9 @@ app\\{exe_name} "%TARGET%" ^
   --color-master "%~dp0reference\\Archroma_Color_Standard_Master_List_Shane.xlsx" ^
   --confidence 0.0 ^
   --apply ^
-  --no-report ^
   --no-auto-train
+echo.
+echo 如有圖片未改名，請睇「待改名圖片\\rename_report.csv」
 echo.
 pause
 """,

@@ -7,7 +7,7 @@ from pvh_filename.color_master import ColorMasterLookup, resolve_color_master
 from pvh_filename.dataset import build_records, records_to_dataframe, iter_image_paths
 from pvh_filename.filenames import build_correct_filename, parse_suffix_components
 from pvh_filename.model import ClipEmbedder, HierarchicalClassifier, default_model_path
-from pvh_filename.ocr import extract_color_code
+from pvh_filename.ocr import extract_color_code, tesseract_status_message
 
 
 def load_classifier(model_dir: Path) -> HierarchicalClassifier:
@@ -42,14 +42,15 @@ def predict_renames(
         valid_records, predicted_suffixes, predicted_kinds, confidences, strict=True
     ):
         color_code = ""
+        color_name = ""
         suffix_source = "model"
+        skip_reason = ""
         if predicted_kind == "color":
             color_code = extract_color_code(record.path) or ""
-            color_name = ""
             if color_code:
                 light_source, _ = parse_suffix_components(predicted_suffix)
                 if light_source not in {"CWF", "D65"}:
-                    light_source = ""
+                    light_source = "CWF"
                 if color_master:
                     color_name = color_master.lookup_name(color_code) or ""
                 if color_name and light_source:
@@ -58,12 +59,16 @@ def predict_renames(
                 elif color_code and light_source:
                     predicted_suffix = f"{light_source}_{color_code}"
                     suffix_source = "ocr_color_code"
+                    if color_master:
+                        skip_reason = f"色號 {color_code} 唔喺對照表，暫用色號改名"
                 else:
                     predicted_suffix = ""
                     suffix_source = "ocr_not_found"
+                    skip_reason = "讀到色號但未能組合檔名"
             else:
                 predicted_suffix = ""
                 suffix_source = "ocr_not_found"
+                skip_reason = "OCR 讀唔到色號（請確認 Tesseract 已安裝，色卡數字清晰）"
 
         view, color = parse_suffix_components(predicted_suffix)
         proposed_name = ""
@@ -76,12 +81,12 @@ def predict_renames(
             if record.current_name == proposed_name or record.current_name.upper() == proposed_name.upper():
                 continue
 
-        if predicted_kind == "color" and (
-            not color_code or (color_master is not None and not color_name)
-        ):
+        if predicted_kind == "color" and not color_code:
             action = "review"
         else:
             action = "rename" if confidence >= confidence_threshold else "review"
+            if action == "review" and not skip_reason:
+                skip_reason = f"信心度太低 ({confidence:.2f})"
 
         results.append(
             {
@@ -99,6 +104,7 @@ def predict_renames(
                 "proposed_name": proposed_name,
                 "confidence": round(confidence, 4),
                 "action": action,
+                "skip_reason": skip_reason,
             }
         )
     return results
@@ -121,6 +127,7 @@ def write_rename_report(rows: list[dict], output_csv: Path) -> None:
         "proposed_name",
         "confidence",
         "action",
+        "skip_reason",
     ]
     with output_csv.open("w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -157,6 +164,42 @@ def export_dataset_manifest(data_root: Path, output_csv: Path) -> None:
     df.to_csv(output_csv, index=False, encoding="utf-8-sig")
 
 
+def print_rename_summary(summary: dict, rows: list[dict]) -> None:
+    print("=" * 50)
+    print(f"圖片總數:     {summary.get('total_images', 0)}")
+    print(f"建議改名:     {summary.get('suggestions', 0)}")
+    print(f"實際改名:     {summary.get('renamed', 0)}")
+    print(f"需要檢查:     {summary.get('needs_review', 0)}")
+    if summary.get("color_master"):
+        print(f"色號對照表: {summary['color_master']}")
+    print(tesseract_status_message())
+    print("=" * 50)
+
+    if summary.get("renamed", 0) == 0 and rows:
+        print("\n未改名原因：")
+        reasons: dict[str, int] = {}
+        for row in rows:
+            if row.get("action") == "rename":
+                continue
+            reason = row.get("skip_reason") or row.get("suffix_source") or "未知"
+            reasons[reason] = reasons.get(reason, 0) + 1
+        for reason, count in sorted(reasons.items(), key=lambda x: -x[1]):
+            print(f"  - {reason}: {count} 張")
+
+        print("\n首 5 張待檢查：")
+        shown = 0
+        for row in rows:
+            if row.get("action") != "rename":
+                print(
+                    f"  {row.get('current_name')} -> {row.get('predicted_kind')} / "
+                    f"{row.get('suffix_source')} / {row.get('skip_reason') or '-'}"
+                )
+                shown += 1
+                if shown >= 5:
+                    break
+    print()
+
+
 def rename_folder(
     folder: Path,
     model_dir: Path,
@@ -170,6 +213,22 @@ def rename_folder(
     folder = folder.resolve()
     report_path = report_path or (folder / "rename_report.csv")
     color_master = resolve_color_master(folder, color_master_path)
+    total_images = len(list(iter_image_paths(folder)))
+
+    if total_images == 0:
+        summary = {
+            "folder": str(folder),
+            "report": None,
+            "total_images": 0,
+            "suggestions": 0,
+            "auto_rename": 0,
+            "needs_review": 0,
+            "renamed": 0,
+            "error": "資料夾內搵唔到圖片。請將圖片放入「待改名圖片」資料夾。",
+        }
+        print_rename_summary(summary, [])
+        print("提示: 確認圖片係 .jpg/.jpeg/.png，而且唔好放喺 app/ 或 models/ 入面。")
+        return summary
 
     rows = predict_renames(
         folder,
@@ -187,14 +246,17 @@ def rename_folder(
     if apply and rename_rows:
         applied = apply_renames(rows, dry_run=False)
 
-    return {
+    summary = {
         "folder": str(folder),
         "report": str(report_path) if write_report else None,
         "color_master": str(color_master.source) if color_master else None,
         "color_master_entries": len(color_master) if color_master else 0,
-        "total_images": len(list(iter_image_paths(folder))),
+        "tesseract": tesseract_status_message(),
+        "total_images": total_images,
         "suggestions": len(rows),
         "auto_rename": len(rename_rows),
         "needs_review": len(review_rows),
         "renamed": sum(1 for r in applied if r.get("status") == "renamed"),
     }
+    print_rename_summary(summary, rows)
+    return summary
