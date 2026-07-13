@@ -3,9 +3,10 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+from pvh_filename.actual_size import has_duplicate_pattern
 from pvh_filename.color_master import ColorMasterLookup, resolve_color_master
 from pvh_filename.dataset import build_records, records_to_dataframe, iter_image_paths
-from pvh_filename.filenames import build_correct_filename, parse_suffix_components
+from pvh_filename.filenames import build_correct_filename, format_angle_suffix, parse_suffix_components
 from pvh_filename.model import ClipEmbedder, HierarchicalClassifier, default_model_path
 from pvh_filename.ocr import extract_color_code, tesseract_status_message
 
@@ -69,6 +70,14 @@ def predict_renames(
                 predicted_suffix = ""
                 suffix_source = "ocr_not_found"
                 skip_reason = "OCR 讀唔到色號（請確認 Tesseract 已安裝，色卡數字清晰）"
+        elif predicted_kind == "angle":
+            if has_duplicate_pattern(record.path):
+                predicted_suffix = "AS"
+                suffix_source = "duplicate_pattern"
+            else:
+                predicted_suffix = format_angle_suffix(predicted_suffix)
+                if predicted_suffix == "AS":
+                    suffix_source = "model_actual_size"
 
         view, color = parse_suffix_components(predicted_suffix)
         proposed_name = ""

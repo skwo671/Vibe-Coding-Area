@@ -17,6 +17,7 @@ VIEW_TYPES = [
     "FRONT&BACK",
     "SIDE VIEW",
     "ACTUAL SIZE",
+    "AS",
     "CORNER",
     "CWF",
     "D65",
@@ -31,7 +32,10 @@ ANGLE_VIEWS = {
     "FRONT & BACK",
     "FRONT ON FABRIC",
     "ACTUAL SIZE",
+    "AS",
 }
+
+ACTUAL_SIZE_LABELS = {"ACTUAL SIZE", "AS"}
 
 PRODUCT_PREFIX_RE = re.compile(r"^\d{6}_[A-Z0-9]+G-\d{6}-\d{2}_.+?_\d+(?:ST|ND|RD|TH)$")
 TDS_MARKER = "_TDS"
@@ -160,8 +164,21 @@ def resolve_folder_prefix(folder: Path, folder_files: list[Path] | None = None) 
     return folder_name.split(" (")[0].strip()
 
 
+def format_angle_suffix(view: str) -> str:
+    """Canonical angle suffix for output filenames."""
+    view = normalize_token(view)
+    if view in ACTUAL_SIZE_LABELS:
+        return "AS"
+    return view
+
+
 def build_correct_filename(prefix: str, suffix: str, extension: str) -> str:
     suffix = normalize_token(suffix)
+    view, color = parse_suffix_components(suffix)
+    if view in ACTUAL_SIZE_LABELS and not color:
+        suffix = "AS"
+    elif view in ANGLE_VIEWS and not color:
+        suffix = format_angle_suffix(view)
     ext = extension if extension.startswith(".") else f".{extension}"
     if suffix:
         return f"{prefix}_{suffix}{ext}"
@@ -177,7 +194,18 @@ def is_likely_misnamed(path: Path, folder_prefix: str) -> bool:
     if f"{TDS_MARKER}_" in path.stem.upper():
         return True
     expected = build_correct_filename(folder_prefix, parsed.suffix, parsed.extension)
-    return path.name != expected and path.name.upper() != expected.upper()
+    if path.name == expected or path.name.upper() == expected.upper():
+        return False
+    # ACTUAL SIZE and AS are equivalent suffixes.
+    if normalize_token(parsed.suffix) in ACTUAL_SIZE_LABELS:
+        alt = build_correct_filename(
+            folder_prefix,
+            "AS" if normalize_token(parsed.suffix) == "ACTUAL SIZE" else "ACTUAL SIZE",
+            parsed.extension,
+        )
+        if path.name.upper() == alt.upper():
+            return False
+    return True
 
 
 def parse_suffix_components(suffix: str) -> tuple[str, str]:
