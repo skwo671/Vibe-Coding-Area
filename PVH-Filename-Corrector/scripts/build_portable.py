@@ -81,7 +81,9 @@ def build_executable() -> Path:
         "--hidden-import",
         "pvh_filename.dataset",
         "--hidden-import",
-        "pvh_filename.runtime",
+        "pvh_filename.color_master",
+        "--hidden-import",
+        "openpyxl",
         "--hidden-import",
         "cv2",
         "--hidden-import",
@@ -101,8 +103,10 @@ def write_launchers(portable: Path, exe_name: str) -> None:
         """請將以下檔案放入此資料夾：
   - 已改好名嘅 TDS 參考檔（檔名包含 _TDS，例如 xxx_TDS.pdf）
   - 所有未改名的圖片
+  - （可選）Archroma 色號對照表 xlsx
 
 放好後，返回上一層雙擊 rename_here.bat 即可自動改名。
+對色圖片會 OCR 讀色號，再查表改成色名（例如 CWF_FAIRWAY GREEN）。
 """,
         encoding="utf-8",
     )
@@ -127,6 +131,7 @@ echo 處理資料夾: %TARGET%
 echo.
 app\\{exe_name} "%TARGET%" ^
   --model "%~dp0models\\suffix_classifier" ^
+  --color-master "%~dp0reference\\Archroma_Color_Standard_Master_List_Shane.xlsx" ^
   --confidence 0.0 ^
   --apply ^
   --no-report ^
@@ -161,7 +166,7 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
 
 功能：
   - 角度相：CORNER / SIDE VIEW / FRONT&BACK / ACTUAL SIZE
-  - 對色相：CWF_色號 或 D65_色號（需 OCR 讀到色卡色號）
+  - 對色相：OCR 讀色號 → 查 Archroma 色號表 → 改成 CWF_色名 / D65_色名
 
 注意：
   - {clip_note}
@@ -231,6 +236,10 @@ def main() -> None:
 
     model_dir = ROOT / "models" / "suffix_classifier"
     shutil.copytree(model_dir, DIST / "models" / "suffix_classifier")
+
+    color_master = ROOT / "reference" / "Archroma_Color_Standard_Master_List_Shane.xlsx"
+    if color_master.exists():
+        shutil.copytree(ROOT / "reference", DIST / "reference")
 
     has_clip = False
     if bundle_clip:
