@@ -56,28 +56,39 @@ class ColorMasterLookup:
     @classmethod
     def from_excel(cls, path: Path) -> ColorMasterLookup:
         path = path.resolve()
-        df = pd.read_excel(path, sheet_name=ARCHROMA_SHEET, header=1)
         by_code: dict[str, str] = {}
 
-        for _, row in df.iterrows():
+        # Archroma sheet
+        archroma = pd.read_excel(path, sheet_name=ARCHROMA_SHEET, header=1)
+        for _, row in archroma.iterrows():
             raw_code = row.get("Archroma Code")
             if pd.isna(raw_code):
                 continue
-
             code_key = normalize_lookup_code(str(raw_code))
             if not code_key:
                 continue
-
             eu_name = clean_display_name(row.get("Color Name (歐洲色名)", ""))
             us_name = clean_display_name(row.get(" (美國色名)", ""))
             name = eu_name or us_name
-            if not name:
-                continue
+            if name:
+                by_code.setdefault(code_key, sanitize_color_name(name))
 
-            by_code.setdefault(code_key, sanitize_color_name(name))
+        # TCX sheet: codes like 19-1555TCX / 18-0937TCX
+        try:
+            tcx = pd.read_excel(path, sheet_name="TCX Color Master", header=0)
+            for _, row in tcx.iterrows():
+                raw_code = row.get("TCX")
+                raw_name = row.get("Color Name (Customer)")
+                if pd.isna(raw_code) or pd.isna(raw_name):
+                    continue
+                code_key = normalize_lookup_code(str(raw_code).replace("TCX", ""))
+                if code_key:
+                    by_code.setdefault(code_key, sanitize_color_name(str(raw_name)))
+        except Exception:
+            pass
 
         if not by_code:
-            raise ValueError(f"No Archroma codes found in {path}")
+            raise ValueError(f"No color codes found in {path}")
 
         return cls(by_code=by_code, source=path)
 

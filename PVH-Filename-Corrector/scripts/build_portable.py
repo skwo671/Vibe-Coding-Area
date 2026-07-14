@@ -34,15 +34,12 @@ def bundle_clip_cache(portable: Path) -> bool:
     clip_src = huggingface_hub_dir() / CLIP_REPO
     if not clip_src.exists():
         print(f"CLIP cache not found: {clip_src}")
-        print("Run build_windows.bat or download CLIP before building.")
         return False
-
     dst = portable / "models" / "huggingface" / "hub" / CLIP_REPO
     if dst.exists():
         shutil.rmtree(dst)
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(clip_src, dst)
-    print(f"Bundled CLIP cache -> {dst}")
     return True
 
 
@@ -69,23 +66,23 @@ def build_executable() -> Path:
         "--hidden-import",
         "pvh_filename",
         "--hidden-import",
-        "pvh_filename.predict",
+        "pvh_filename.simple_work",
+        "--hidden-import",
+        "pvh_filename.simple_learn",
+        "--hidden-import",
+        "pvh_filename.simple_model",
+        "--hidden-import",
+        "pvh_filename.simple_labels",
+        "--hidden-import",
+        "pvh_filename.simple_ocr",
+        "--hidden-import",
+        "pvh_filename.simple_as",
         "--hidden-import",
         "pvh_filename.model",
         "--hidden-import",
-        "pvh_filename.ocr",
-        "--hidden-import",
-        "pvh_filename.auto_train",
-        "--hidden-import",
-        "pvh_filename.filenames",
-        "--hidden-import",
-        "pvh_filename.dataset",
-        "--hidden-import",
-        "pvh_filename.actual_size",
-        "--hidden-import",
-        "pvh_filename.angle_heuristics",
-        "--hidden-import",
         "pvh_filename.color_master",
+        "--hidden-import",
+        "pvh_filename.runtime",
         "--hidden-import",
         "openpyxl",
         "--hidden-import",
@@ -94,7 +91,7 @@ def build_executable() -> Path:
         "pytesseract",
         "--hidden-import",
         "PIL",
-        str(ROOT / "scripts" / "rename_folder.py"),
+        str(ROOT / "scripts" / "simple_tool.py"),
     ]
     subprocess.check_call(cmd, cwd=ROOT)
     return ROOT / "dist" / APP_NAME
@@ -103,84 +100,102 @@ def build_executable() -> Path:
 def write_launchers(portable: Path, exe_name: str) -> None:
     work_dir = portable / "待改名圖片"
     work_dir.mkdir(exist_ok=True)
-    (work_dir / "請將 TDS 參考檔同未改名圖片放喺呢度.txt").write_text(
-        """請將以下檔案放入此資料夾：
-  - 已改好名嘅 TDS 參考檔（檔名包含 _TDS，例如 xxx_TDS.pdf）
-  - 所有未改名的圖片
-  - （可選）Archroma 色號對照表 xlsx
+    learn_dir = portable / "學習樣本"
+    learn_dir.mkdir(exist_ok=True)
 
-放好後，返回上一層雙擊 rename_here.bat 即可自動改名。
-對色圖片會 OCR 讀色號，再查表改成色名（例如 CWF_FAIRWAY GREEN）。
+    (work_dir / "請將 TDS 同未改名圖片放喺呢度.txt").write_text(
+        """工作模式資料夾：
+  1. 放入 TDS 參考檔（檔名含 _TDS）
+  2. 放入未改名圖片
+  3. 返回上一層，雙擊「1_工作模式_自動改名.bat」
+""",
+        encoding="utf-8",
+    )
+    (learn_dir / "請將已改正確檔名嘅圖片放喺呢度.txt").write_text(
+        """學習模式資料夾：
+  將你改正確名嘅圖片放入呢度，例如：
+    產品前綴_AS.jpg
+    產品前綴_FRONT.jpg
+    產品前綴_CWF_654-920.jpg
+    產品前綴_CWF_19-1555.jpg
+  然後返回上一層，雙擊「2_學習模式_訓練模型.bat」
 """,
         encoding="utf-8",
     )
 
-    bat = portable / "rename_here.bat"
-    bat.write_text(
+    (portable / "1_工作模式_自動改名.bat").write_text(
         f"""@echo off
 chcp 65001 >nul
 cd /d "%~dp0"
 set HF_HOME=%~dp0models\\huggingface
 set TRANSFORMERS_OFFLINE=1
 set HF_HUB_OFFLINE=1
-
-set "TARGET=%~dp0"
-if exist "%~dp0待改名圖片\\" set "TARGET=%~dp0待改名圖片"
-
+set "TARGET=%~dp0待改名圖片"
 echo ========================================
-echo   PVH 圖片檔名自動更正
+echo   工作模式：自動改名
 echo ========================================
-echo.
-echo 處理資料夾: %TARGET%
-echo.
-app\\{exe_name} "%TARGET%" ^
-  --model "%~dp0models\\suffix_classifier" ^
-  --color-master "%~dp0reference\\Archroma_Color_Standard_Master_List_Shane.xlsx" ^
-  --confidence 0.0 ^
-  --apply ^
-  --no-auto-train
-echo.
-echo 如有圖片未改名，請睇「待改名圖片\\rename_report.csv」
+app\\{exe_name} work "%TARGET%" --model "%~dp0models\\suffix_classifier"
 echo.
 pause
 """,
         encoding="utf-8",
     )
 
+    (portable / "2_學習模式_訓練模型.bat").write_text(
+        f"""@echo off
+chcp 65001 >nul
+cd /d "%~dp0"
+set HF_HOME=%~dp0models\\huggingface
+set TRANSFORMERS_OFFLINE=1
+set HF_HUB_OFFLINE=1
+set "TARGET=%~dp0學習樣本"
+echo ========================================
+echo   學習模式：從正確檔名訓練
+echo ========================================
+app\\{exe_name} learn "%TARGET%" --model "%~dp0models\\suffix_classifier"
+echo.
+pause
+""",
+        encoding="utf-8",
+    )
+
+    # Keep old name as alias to work mode.
+    (portable / "rename_here.bat").write_text(
+        '@echo off\r\ncall "%~dp01_工作模式_自動改名.bat"\r\n',
+        encoding="utf-8",
+    )
+
 
 def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
-    clip_note = (
-        "已內建 CLIP 模型，可離線使用。"
-        if has_clip
-        else "首次執行需聯網下載 CLIP 模型（約 1GB）。"
-    )
-    readme = portable / "使用說明.txt"
-    readme.write_text(
-        f"""PVH 圖片檔名自動更正工具（Windows）
-================================
+    clip_note = "已內建 CLIP 模型，可離線使用。" if has_clip else "首次執行需聯網下載 CLIP。"
+    (portable / "使用說明.txt").write_text(
+        f"""PVH 簡化改名工具（Windows）
+========================
 
-使用方法：
-  1. 打開「待改名圖片」資料夾
-  2. 放入 TDS 參考檔（檔名含 _TDS）同所有未改名圖片
-  3. 雙擊 rename_here.bat
+兩個模式：
 
-程式會自動：
-  - 從 TDS 檔讀取正確產品前綴
-  - 辨識每張圖係角度相定對色相
-  - 直接改名（已正確嘅圖片會跳過）
+1) 工作模式（自動改名）
+   - 把 TDS + 未改名圖片放入「待改名圖片」
+   - 雙擊 1_工作模式_自動改名.bat
+   - 規則：
+     * 對色相：圖片有布色卡／色號（如 654-920、19-1555）
+     * 角度相 + 兩個非常相近產品圖案 → AS
+     * 角度相 + 單一正面產品 → FRONT
 
-功能：
-  - 角度相：CORNER / SIDE / FRONT / AS（Actual Size）
-  - 對色相：OCR 讀色號 → 查 Archroma 色號表 → 改成 CWF_色名 / D65_色名
+2) 學習模式（不斷訓練）
+   - 把你手動改正確嘅圖片放入「學習樣本」
+     檔名例子：xxx_AS.jpg / xxx_FRONT.jpg / xxx_CWF_654-920.jpg
+   - 雙擊 2_學習模式_訓練模型.bat
+   - 程式會記住呢批答案並重訓「角度 vs 對色」AI 模型
 
 注意：
   - {clip_note}
-  - 對色 OCR 需安裝 Tesseract：
-    https://github.com/UB-Mannheim/tesseract/wiki
-  - TDS 同圖片必須放喺同一個資料夾
+  - 對色 OCR 需要 Tesseract：C:\\Program Files\\Tesseract-OCR
+  - 色號表喺 reference\\ 資料夾
 
-手動執行：
-  app\\{exe_name} "待改名圖片" --model "models\\suffix_classifier" --apply --no-report
+手動：
+  app\\{exe_name} work "待改名圖片" --model models\\suffix_classifier
+  app\\{exe_name} learn "學習樣本" --model models\\suffix_classifier
 """,
         encoding="utf-8",
     )
@@ -190,71 +205,43 @@ def make_zip(portable: Path) -> Path:
     zip_base = portable.parent / portable.name
     if Path(f"{zip_base}.zip").exists():
         Path(f"{zip_base}.zip").unlink()
-    archive = shutil.make_archive(str(zip_base), "zip", portable.parent, portable.name)
-    return Path(archive)
+    return Path(shutil.make_archive(str(zip_base), "zip", portable.parent, portable.name))
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build PVH portable Windows package")
-    parser.add_argument(
-        "--bundle-clip",
-        action="store_true",
-        help="Bundle HuggingFace CLIP cache for offline use",
-    )
-    parser.add_argument(
-        "--no-bundle-clip",
-        action="store_true",
-        help="Skip bundling CLIP (smaller package, needs internet on first run)",
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--bundle-clip", action="store_true")
+    parser.add_argument("--no-bundle-clip", action="store_true")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     bundle_clip = args.bundle_clip or not args.no_bundle_clip
-
     if platform.system() != "Windows":
-        print("=" * 50)
-        print("你而家用緊 Mac/Linux，無法直接產生 Windows .exe。")
-        print()
-        print("請用以下任一方法取得 Windows .exe：")
-        print("  1. 將專案複製去 Windows，雙擊 build_windows.bat")
-        print("  2. GitHub Actions：推送後到 Actions 頁下載 artifact")
-        print("=" * 50)
+        print("請喺 Windows 或用 GitHub Actions 打包 .exe")
         if platform.system() == "Darwin":
             sys.exit(1)
 
     model_src = ROOT / "models" / "suffix_classifier" / "hierarchical_classifier.joblib"
     if not model_src.exists():
         print(f"ERROR: Missing model: {model_src}")
-        print("Run: python scripts/train_model.py")
         sys.exit(1)
 
     built_dir = build_executable()
-    exe_name = "PVH-Rename.exe"
-
     if DIST.exists():
         shutil.rmtree(DIST)
     DIST.mkdir(parents=True)
-
     shutil.copytree(built_dir, DIST / "app")
-
-    model_dir = ROOT / "models" / "suffix_classifier"
-    shutil.copytree(model_dir, DIST / "models" / "suffix_classifier")
-
+    shutil.copytree(ROOT / "models" / "suffix_classifier", DIST / "models" / "suffix_classifier")
     color_master = ROOT / "reference" / "Archroma_Color_Standard_Master_List_Shane.xlsx"
     if color_master.exists():
         shutil.copytree(ROOT / "reference", DIST / "reference")
-
-    has_clip = False
-    if bundle_clip:
-        has_clip = bundle_clip_cache(DIST)
-
-    write_launchers(DIST, exe_name)
-    write_readme(DIST, exe_name, has_clip)
-
+    has_clip = bundle_clip_cache(DIST) if bundle_clip else False
+    write_launchers(DIST, "PVH-Rename.exe")
+    write_readme(DIST, "PVH-Rename.exe", has_clip)
     zip_path = make_zip(DIST)
-    print(f"\nPortable package: {DIST}")
+    print(f"Portable package: {DIST}")
     print(f"Zip archive:      {zip_path}")
 
 
