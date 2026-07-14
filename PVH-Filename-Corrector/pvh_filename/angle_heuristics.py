@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from pathlib import Path
 
+import cv2
 import numpy as np
 
-from pvh_filename.actual_size import has_duplicate_pattern
-from pvh_filename.angle_heuristics import looks_like_side_view
+from pvh_filename.actual_size import _correlation_score, has_duplicate_pattern
 from pvh_filename.filenames import (
     ACTUAL_SIZE_LABELS,
     FRONT_BACK_LABELS,
@@ -13,7 +14,27 @@ from pvh_filename.filenames import (
     format_angle_suffix,
     normalize_token,
 )
-from pvh_filename.model import HierarchicalClassifier
+
+if TYPE_CHECKING:
+    from pvh_filename.model import HierarchicalClassifier
+
+
+def looks_like_side_view(path: Path) -> bool:
+    """Heuristic: wide product shot with different left/right halves (not duplicate)."""
+    image = cv2.imread(str(path))
+    if image is None:
+        return False
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    height, width = gray.shape[:2]
+    if width / max(height, 1) < 1.15:
+        return False
+    if has_duplicate_pattern(path):
+        return False
+
+    mid = width // 2
+    corr = _correlation_score(gray[:, :mid], gray[:, width - mid :])
+    return corr < 0.35
 
 
 def _class_prob(classes: list[str], probs: np.ndarray, labels: set[str]) -> float:
