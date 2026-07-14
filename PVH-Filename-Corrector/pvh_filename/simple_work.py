@@ -4,14 +4,26 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
-from pvh_filename.color_master import resolve_color_master
-from pvh_filename.model import ClipEmbedder
-from pvh_filename.simple_as import has_two_similar_products
-from pvh_filename.simple_labels import build_filename, find_tds_prefix, iter_image_paths, normalize_token
-from pvh_filename.simple_model import SimpleKindClassifier, default_simple_model_path
-from pvh_filename.simple_ocr import detect_color_card_code, tesseract_status_message
-
 import numpy as np
+
+from pvh_filename.color_master import resolve_color_master
+from pvh_filename.model import ClipEmbedder, HierarchicalClassifier, default_model_path
+from pvh_filename.simple_angle_heuristics import looks_like_corner, looks_like_side_view
+from pvh_filename.simple_as import has_two_similar_products
+from pvh_filename.simple_labels import (
+    ANGLE_ALIAS,
+    ANGLE_LABELS,
+    build_filename,
+    find_tds_prefix,
+    iter_image_paths,
+    normalize_token,
+)
+from pvh_filename.simple_model import (
+    SimpleKindClassifier,
+    default_angle_model_path,
+    default_simple_model_path,
+)
+from pvh_filename.simple_ocr import detect_color_card_code, tesseract_status_message
 
 
 def _unique_name(folder: Path, filename: str, taken: set[str]) -> str:
@@ -30,6 +42,40 @@ def _unique_name(folder: Path, filename: str, taken: set[str]) -> str:
         n += 1
 
 
+def _map_legacy_angle(suffix: str) -> str:
+    return ANGLE_ALIAS.get(normalize_token(suffix), "FRONT")
+
+
+def _resolve_angle_suffix(
+    path: Path,
+    embedding: np.ndarray | None,
+    angle_clf: SimpleKindClassifier | None,
+    legacy: HierarchicalClassifier | None,
+) -> tuple[str, str]:
+    """Pick AS / FRONT / SIDE / CORNER for an angle shot."""
+    if has_two_similar_products(path):
+        return "AS", "duplicate_pattern"
+
+    if angle_clf is not None and embedding is not None:
+        labels, confs = angle_clf.predict_kind(embedding.reshape(1, -1))
+        label = normalize_token(labels[0])
+        if label in ANGLE_LABELS and confs[0] >= 0.35:
+            return label, "angle_model"
+
+    if legacy is not None and embedding is not None:
+        suffixes, kinds, confs = legacy.predict(embedding.reshape(1, -1))
+        if kinds and kinds[0] == "angle":
+            mapped = _map_legacy_angle(suffixes[0])
+            if mapped in ANGLE_LABELS:
+                return mapped, "legacy_angle_model"
+
+    if looks_like_side_view(path):
+        return "SIDE", "heuristic_side"
+    if looks_like_corner(path):
+        return "CORNER", "heuristic_corner"
+    return "FRONT", "single_product"
+
+
 def predict_work_folder(
     folder: Path,
     model_dir: Path,
@@ -41,23 +87,36 @@ def predict_work_folder(
     images = iter_image_paths(folder)
     prefix = find_tds_prefix(folder) or folder.name
     color_master = resolve_color_master(folder)
-    model_path = default_simple_model_path(model_dir)
-    classifier = SimpleKindClassifier.load(model_path) if model_path.exists() else None
+
+    kind_path = default_simple_model_path(model_dir)
+    angle_path = default_angle_model_path(model_dir)
+    kind_clf = SimpleKindClassifier.load(kind_path) if kind_path.exists() else None
+    angle_clf = SimpleKindClassifier.load(angle_path) if angle_path.exists() else None
+
+    legacy = None
+    legacy_file = default_model_path(model_dir)
+    if legacy_file.exists():
+        try:
+            legacy = HierarchicalClassifier.load(legacy_file)
+        except Exception:
+            legacy = None
 
     kinds = ["angle"] * len(images)
     kind_confs = [0.0] * len(images)
+    emb_map: dict[str, np.ndarray] = {}
 
-    if classifier and images:
+    if images and (kind_clf or angle_clf or legacy):
         embedder = ClipEmbedder()
         embeddings, valid_paths = embedder.encode_paths([str(p) for p in images])
         emb_map = {p: embeddings[i] for i, p in enumerate(valid_paths)}
-        valid_idx = [i for i, path in enumerate(images) if str(path) in emb_map]
-        if valid_idx:
-            sub = np.vstack([emb_map[str(images[i])] for i in valid_idx])
-            pred_labels, pred_conf = classifier.predict_kind(sub)
-            for j, i in enumerate(valid_idx):
-                kinds[i] = pred_labels[j]
-                kind_confs[i] = pred_conf[j]
+        if kind_clf:
+            valid_idx = [i for i, path in enumerate(images) if str(path) in emb_map]
+            if valid_idx:
+                sub = np.vstack([emb_map[str(images[i])] for i in valid_idx])
+                pred_labels, pred_conf = kind_clf.predict_kind(sub)
+                for j, i in enumerate(valid_idx):
+                    kinds[i] = pred_labels[j]
+                    kind_confs[i] = pred_conf[j]
 
     rows: list[dict] = []
     taken: set[str] = set()
@@ -68,6 +127,7 @@ def predict_work_folder(
         source = "model"
         reason = ""
         final_kind = kind
+        embedding = emb_map.get(str(path))
 
         if color_code:
             final_kind = "color"
@@ -82,14 +142,9 @@ def predict_work_folder(
             final_kind = "color"
             source = "model_color_no_ocr"
             reason = "模型判斷為對色相，但 OCR 讀唔到色號"
-        elif has_two_similar_products(path):
-            final_kind = "angle"
-            suffix = "AS"
-            source = "duplicate_pattern"
         else:
             final_kind = "angle"
-            suffix = "FRONT"
-            source = "single_product"
+            suffix, source = _resolve_angle_suffix(path, embedding, angle_clf, legacy)
 
         proposed = ""
         action = "review"
@@ -167,7 +222,8 @@ def predict_work_folder(
         "folder": str(folder),
         "prefix": prefix,
         "tesseract": tesseract_status_message(),
-        "model": str(model_path) if model_path.exists() else None,
+        "model": str(kind_path) if kind_path.exists() else None,
+        "angle_model": str(angle_path) if angle_path.exists() else None,
         "total_images": len(images),
         "renamed": renamed,
         "report": str(report_path) if write_report else None,
@@ -178,12 +234,13 @@ def predict_work_folder(
     print(f"圖片總數:   {summary['total_images']}")
     print(f"實際改名:   {summary['renamed']}")
     print(f"TDS 前綴:   {summary['prefix']}")
+    print("角度相:     AS / FRONT / SIDE / CORNER")
     print(summary["tesseract"])
     print("=" * 50)
     for row in rows[:8]:
         print(
             f"  {row['current_name']} -> {row.get('proposed_name') or '-'} "
-            f"[{row['predicted_kind']}/{row['suffix_source']}]"
+            f"[{row['predicted_kind']}/{row['suffix'] or '-'}/{row['suffix_source']}]"
         )
     if len(rows) > 8:
         print(f"  ... 其餘 {len(rows) - 8} 張見 rename_report.csv")

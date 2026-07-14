@@ -65,6 +65,10 @@ def default_simple_model_path(model_dir: Path) -> Path:
     return model_dir / "simple_kind_classifier.joblib"
 
 
+def default_angle_model_path(model_dir: Path) -> Path:
+    return model_dir / "simple_angle_classifier.joblib"
+
+
 def train_simple_kind_model(
     paths: list[str],
     labels: list[str],
@@ -72,6 +76,35 @@ def train_simple_kind_model(
 ) -> dict:
     if len(paths) < 4:
         raise ValueError("學習樣本太少（至少 4 張，並同時有角度相與對色相更佳）")
+
+    embedder = ClipEmbedder()
+    embeddings, valid_paths = embedder.encode_paths(paths)
+    path_to_label = dict(zip(paths, labels, strict=False))
+    valid_labels = [path_to_label[p] for p in valid_paths]
+
+    clf = SimpleKindClassifier()
+    metrics = clf.fit(embeddings, valid_labels)
+    clf.save(output_path)
+    metrics.update(
+        {
+            "num_images": len(valid_paths),
+            "model_file": str(output_path),
+            "label_counts": {
+                label: valid_labels.count(label) for label in sorted(set(valid_labels))
+            },
+        }
+    )
+    return metrics
+
+
+def train_simple_angle_model(
+    paths: list[str],
+    labels: list[str],
+    output_path: Path,
+) -> dict:
+    """Train AS / FRONT / SIDE / CORNER classifier from learning samples."""
+    if len(paths) < 4 or len(set(labels)) < 2:
+        raise ValueError("角度相學習樣本不足（需要至少兩種：AS/FRONT/SIDE/CORNER）")
 
     embedder = ClipEmbedder()
     embeddings, valid_paths = embedder.encode_paths(paths)

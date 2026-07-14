@@ -7,6 +7,8 @@ PVH 簡化改名工具
 角度相：
   - 兩個非常相近的產品圖案 → AS
   - 單一產品正面 → FRONT
+  - 側面 → SIDE
+  - 角落 → CORNER
 
 對色相：
   - 有布色卡，圖片上有色號（654-920 / 19-1555 等）
@@ -21,5 +23,7 @@ PVH 簡化改名工具
       正確檔名例子：
         xxx_AS.jpg
         xxx_FRONT.jpg
+        xxx_SIDE.jpg
+        xxx_CORNER.jpg
         xxx_CWF_654-920.jpg
         xxx_D65_NAVY BLUE.jpg

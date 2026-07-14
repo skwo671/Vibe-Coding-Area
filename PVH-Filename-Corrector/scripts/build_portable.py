@@ -179,12 +179,14 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
    - 雙擊 1_工作模式_自動改名.bat
    - 規則：
      * 對色相：圖片有布色卡／色號（如 654-920、19-1555）
-     * 角度相 + 兩個非常相近產品圖案 → AS
-     * 角度相 + 單一正面產品 → FRONT
+     * 角度相 AS：兩個非常相近產品圖案
+     * 角度相 FRONT：單一正面
+     * 角度相 SIDE：側面
+     * 角度相 CORNER：角落
 
 2) 學習模式（不斷訓練）
    - 把你手動改正確嘅圖片放入「學習樣本」
-     檔名例子：xxx_AS.jpg / xxx_FRONT.jpg / xxx_CWF_654-920.jpg
+     檔名例子：xxx_AS.jpg / xxx_FRONT.jpg / xxx_SIDE.jpg / xxx_CORNER.jpg / xxx_CWF_654-920.jpg
    - 雙擊 2_學習模式_訓練模型.bat
    - 程式會記住呢批答案並重訓「角度 vs 對色」AI 模型
 

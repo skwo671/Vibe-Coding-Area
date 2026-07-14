@@ -7,9 +7,21 @@ from pathlib import Path
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tif", ".tiff"}
 SCAN_SKIP_DIRS = {"app", "models", ".venv", "__pycache__", ".git", "learn_bank"}
 
-# Work / learn labels — intentionally small set.
-ANGLE_LABELS = {"AS", "FRONT"}
+# Angle members in the simplified tool.
+ANGLE_LABELS = {"AS", "FRONT", "SIDE", "CORNER"}
 COLOR_LIGHTS = {"CWF", "D65", "UV"}
+
+ANGLE_ALIAS = {
+    "ACTUAL SIZE": "AS",
+    "AS": "AS",
+    "FRONT&BACK": "FRONT",
+    "FRONT & BACK": "FRONT",
+    "FRONT ON FABRIC": "FRONT",
+    "FRONT": "FRONT",
+    "SIDE VIEW": "SIDE",
+    "SIDE": "SIDE",
+    "CORNER": "CORNER",
+}
 
 TDS_MARKER = "_TDS"
 PRODUCT_PREFIX_RE = re.compile(r"^\d{6}_[A-Z0-9]+G-\d{6}-\d{2}_.+?_\d+(?:ST|ND|RD|TH)$", re.I)
@@ -105,19 +117,20 @@ def parse_simple_label(stem: str) -> SimpleLabel | None:
         if upper.endswith(bare):
             return SimpleLabel(kind="color", suffix=light)
 
-    for label in ("ACTUAL SIZE", "SIDE VIEW", "FRONT&BACK", "FRONT & BACK", "AS", "FRONT", "SIDE", "CORNER"):
+    for label in (
+        "ACTUAL SIZE",
+        "FRONT ON FABRIC",
+        "SIDE VIEW",
+        "FRONT&BACK",
+        "FRONT & BACK",
+        "AS",
+        "FRONT",
+        "SIDE",
+        "CORNER",
+    ):
         marker = f"_{label}"
         if upper.endswith(marker) or upper.endswith(marker.replace(" ", "")):
-            mapped = {
-                "ACTUAL SIZE": "AS",
-                "AS": "AS",
-                "FRONT&BACK": "FRONT",
-                "FRONT & BACK": "FRONT",
-                "FRONT": "FRONT",
-                "SIDE VIEW": "FRONT",  # simplified world: non-AS angle → FRONT
-                "SIDE": "FRONT",
-                "CORNER": "FRONT",
-            }[label]
+            mapped = ANGLE_ALIAS[label]
             return SimpleLabel(kind="angle", suffix=mapped)
 
     # Bare color-code suffix: _654-920 / _19-1555
