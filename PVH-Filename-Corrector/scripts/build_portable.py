@@ -226,6 +226,11 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
 
 兩個模式：
 
+0) 準備本機 Ollama AI（可選，免費睇圖改名）
+   - 安裝 https://ollama.com/
+   - 雙擊 0_準備Ollama_AI.bat（下載 llava）
+   - 保持 Ollama 開住後再跑工作模式
+
 1) 工作模式（自動改名）
    - 把 TDS + 未改名圖片放入「待改名圖片」
    - 雙擊 1_工作模式_自動改名.bat
@@ -235,6 +240,7 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
      * 角度相 FRONT：單一正面
      * 角度相 SIDE：側面
      * 角度相 CORNER：角落
+   - 若已啟用 Ollama：AI 可幫手判斷對色／角度
 
 2) 學習模式（不斷訓練）
    - 把你手動改正確嘅圖片放入「學習樣本」
