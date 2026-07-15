@@ -1,11 +1,13 @@
 """Optional AI vision helper for Archroma color-card naming.
 
+Default provider: Google Gemini (OpenAI-compatible endpoint).
+
 Enabled via AI設定.txt or env:
   PVH_AI_ENABLED=1
-  PVH_AI_API_KEY=...
-  PVH_AI_BASE_URL=https://api.openai.com/v1   (optional)
-  PVH_AI_MODEL=gpt-4o-mini                    (optional)
-  PVH_AI_MODE=fallback|always                 (optional)
+  PVH_AI_API_KEY=...          (or GEMINI_API_KEY / GOOGLE_API_KEY)
+  PVH_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+  PVH_AI_MODEL=gemini-2.0-flash
+  PVH_AI_MODE=fallback|always
 """
 
 from __future__ import annotations
@@ -27,15 +29,18 @@ from pvh_filename.simple_ocr import ARCHROMA_CODE_RE, CWF_LABEL_RE
 
 CONFIG_NAMES = ("AI設定.txt", "ai_config.txt", "AI_CONFIG.txt")
 
+DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+DEFAULT_MODEL = "gemini-2.0-flash"
+
 
 @dataclass(frozen=True)
 class AIColorConfig:
     enabled: bool = False
     mode: str = "fallback"  # fallback | always | off
     api_key: str = ""
-    base_url: str = "https://api.openai.com/v1"
-    model: str = "gpt-4o-mini"
-    json_mode: bool = True
+    base_url: str = DEFAULT_BASE_URL
+    model: str = DEFAULT_MODEL
+    json_mode: bool = False
     source: str = ""
 
     def is_local(self) -> bool:
@@ -49,6 +54,11 @@ class AIColorConfig:
                 "::1",
             )
         )
+
+    def is_gemini(self) -> bool:
+        host = (self.base_url or "").lower()
+        model = (self.model or "").lower()
+        return "generativelanguage.googleapis.com" in host or model.startswith("gemini")
 
     @property
     def usable(self) -> bool:
@@ -127,20 +137,31 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
 
     api_key = (
         os.environ.get("PVH_AI_API_KEY")
+        or os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("GOOGLE_API_KEY")
         or os.environ.get("OPENAI_API_KEY")
         or file_data.get("api_key")
+        or file_data.get("gemini_api_key")
         or file_data.get("openai_api_key")
         or ""
     ).strip()
     base_url = (
         os.environ.get("PVH_AI_BASE_URL")
         or file_data.get("base_url")
-        or "https://api.openai.com/v1"
+        or DEFAULT_BASE_URL
     ).strip().rstrip("/")
     model = (
-        os.environ.get("PVH_AI_MODEL") or file_data.get("model") or "gpt-4o-mini"
+        os.environ.get("PVH_AI_MODEL") or file_data.get("model") or DEFAULT_MODEL
     ).strip()
-    json_mode_raw = os.environ.get("PVH_AI_JSON_MODE") or file_data.get("json_mode", "1")
+
+    # Gemini OpenAI-compat is happiest without forced response_format by default.
+    default_json = "0" if (
+        "generativelanguage.googleapis.com" in base_url.lower()
+        or model.lower().startswith("gemini")
+    ) else "1"
+    json_mode_raw = os.environ.get("PVH_AI_JSON_MODE")
+    if json_mode_raw is None:
+        json_mode_raw = file_data.get("json_mode", default_json)
     json_mode = _parse_bool(str(json_mode_raw))
 
     cfg = AIColorConfig(
@@ -169,9 +190,10 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
 def ai_status_message(cfg: AIColorConfig | None = None) -> str:
     cfg = cfg or load_ai_config()
     if not cfg.usable:
-        return "AI 色名: 未啟用（可設 AI設定.txt 或 PVH_AI_API_KEY）"
+        return "AI 色名: 未啟用（可設 AI設定.txt + Gemini API key）"
     where = f" / {Path(cfg.source).name}" if cfg.source else ""
-    return f"AI 色名: 已啟用 ({cfg.mode}, {cfg.model}{where})"
+    provider = "Gemini" if cfg.is_gemini() else "AI"
+    return f"AI 色名: 已啟用 {provider} ({cfg.mode}, {cfg.model}{where})"
 
 
 def _image_to_data_url(path: Path, max_side: int = 1280) -> str | None:
@@ -193,6 +215,10 @@ def _extract_json_object(text: str) -> dict:
     text = (text or "").strip()
     if not text:
         return {}
+    # Gemini sometimes wraps JSON in ```json fences.
+    fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.S | re.I)
+    if fenced:
+        text = fenced.group(1)
     try:
         data = json.loads(text)
         return data if isinstance(data, dict) else {}
@@ -281,6 +307,7 @@ def read_color_card_with_ai(
         "- Prefer the official color name printed above the code.\n"
         "- has_cwf_label is true only if CWF appears as a label/sticker, not just generic text.\n"
         "- If unsure, leave fields empty rather than guessing wild values.\n"
+        "- Do not wrap the JSON in markdown fences.\n"
     )
     if hint_text:
         prompt += f"\nOCR hint text:\n{hint_text[:500]}\n"

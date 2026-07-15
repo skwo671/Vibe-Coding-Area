@@ -199,8 +199,9 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
   - {clip_note}
   - 對色 OCR 需要 Tesseract：C:\\Program Files\\Tesseract-OCR
   - 色號表喺 reference\\ 資料夾
-  - （可選）AI 協助改色名：複製 AI設定.example.txt 為 AI設定.txt
-    可用免費 OpenRouter / Gemini / Groq，或本機 Ollama；mode=fallback 較省額度
+  - （可選）AI 色名預設用 Google Gemini：複製／編輯 AI設定.txt
+    去 https://aistudio.google.com/apikey 拎免費 key，填 api_key 並 enabled=1
+    mode=fallback 較省額度；需要上網
 
 手動：
   app\\{exe_name} work "待改名圖片" --model models\\suffix_classifier
@@ -253,6 +254,8 @@ def main() -> None:
     example_ai = ROOT / "AI設定.example.txt"
     if example_ai.exists():
         shutil.copy2(example_ai, DIST / "AI設定.example.txt")
+        # Ready-to-edit Gemini config (user fills api_key).
+        shutil.copy2(example_ai, DIST / "AI設定.txt")
     zip_path = make_zip(DIST)
     print(f"Portable package: {DIST}")
     print(f"Zip archive:      {zip_path}")

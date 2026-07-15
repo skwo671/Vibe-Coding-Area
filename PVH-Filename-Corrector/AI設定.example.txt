@@ -1,60 +1,33 @@
-# AI 色名協助設定（可選）
-# 複製此檔為 AI設定.txt，按下面其中一個免費方案填好，enabled=1
+# Google Gemini 色名協助（預設）
+# 1) 去 https://aistudio.google.com/apikey 免費申請 API key
+# 2) 複製此檔為 AI設定.txt
+# 3) 把下面 api_key= 後面貼上你的 key
+# 4) 改 enabled=1
 # 放喺工具根目錄，或「待改名圖片」資料夾內皆可
 
 enabled=0
 mode=fallback
-json_mode=1
+json_mode=0
 api_key=
-base_url=https://openrouter.ai/api/v1
-model=openrouter/free
+base_url=https://generativelanguage.googleapis.com/v1beta/openai
+model=gemini-2.0-flash
 
-# ------------------------------------------------------------
-# 免費方案（擇一；都要支援「睇相」嘅 vision 模型）
-# ------------------------------------------------------------
-#
-# 1) OpenRouter 免費路由（最容易，建議）
-#    開戶拎 key：https://openrouter.ai/
-#    enabled=1
-#    api_key=sk-or-v1-你的key
-#    base_url=https://openrouter.ai/api/v1
-#    model=openrouter/free
-#    （或指定免費 vision，例如 google/gemini-2.0-flash-exp:free）
-#
-# 2) Google Gemini 免費額度（Google AI Studio）
-#    拎 key：https://aistudio.google.com/apikey
-#    enabled=1
-#    api_key=你的_Gemini_API_Key
-#    base_url=https://generativelanguage.googleapis.com/v1beta/openai
-#    model=gemini-2.0-flash
-#    json_mode=0
-#
-# 3) Groq 免費額度（有 vision 模型先用）
-#    拎 key：https://console.groq.com/
-#    enabled=1
-#    api_key=gsk_你的key
-#    base_url=https://api.groq.com/openai/v1
-#    model=meta-llama/llama-4-scout-17b-16e-instruct
-#
-# 4) 本機完全免費：Ollama（要自己裝，唔使雲端 key）
-#    安裝：https://ollama.com/ 然後執行：ollama pull llava
-#    enabled=1
-#    api_key=ollama
-#    base_url=http://127.0.0.1:11434/v1
-#    model=llava
-#    json_mode=0
-#
 # mode 說明：
-#   fallback = OCR 讀唔到色號/色名時先叫 AI（省額度，建議）
-#   always   = 對色相都問 AI
+#   fallback = OCR 讀唔到色號/色名時先叫 Gemini（省額度，建議）
+#   always   = 對色相都問 Gemini
 #   off      = 關閉
 #
-# 注意：免費雲端通常有每分鐘次數限制；色名仍會優先對照 reference 色號表。
+# 可選模型：
+#   gemini-2.0-flash（建議，快）
+#   gemini-2.5-flash
+#   gemini-2.5-pro（較準，較慢）
 #
-# 環境變數亦可：
+# 亦可用環境變數：
 #   PVH_AI_ENABLED=1
-#   PVH_AI_API_KEY=...
+#   GEMINI_API_KEY=你的key
 #   PVH_AI_MODE=fallback
-#   PVH_AI_MODEL=openrouter/free
-#   PVH_AI_BASE_URL=https://openrouter.ai/api/v1
-#   PVH_AI_JSON_MODE=1
+#   PVH_AI_MODEL=gemini-2.0-flash
+#
+# （其他免費方案仍可用，見下面註釋）
+# OpenRouter: base_url=https://openrouter.ai/api/v1  model=openrouter/free
+# Ollama本機: base_url=http://127.0.0.1:11434/v1  model=llava  api_key=ollama
