@@ -9,3 +9,6 @@ output/
 __pycache__/
 *.pyc
 .DS_Store
+AI設定.txt
+ai_config.txt
+AI_CONFIG.txt
