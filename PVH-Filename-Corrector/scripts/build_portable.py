@@ -137,6 +137,7 @@ set HF_HUB_OFFLINE=1
 set "TARGET=%~dp0待改名圖片"
 echo ========================================
 echo   工作模式：自動改名
+echo   （如用 AI：請先開 Ollama，見 0_準備Ollama_AI.bat）
 echo ========================================
 app\\{exe_name} work "%TARGET%" --model "%~dp0models\\suffix_classifier"
 echo.
@@ -157,6 +158,53 @@ echo ========================================
 echo   學習模式：從正確檔名訓練
 echo ========================================
 app\\{exe_name} learn "%TARGET%" --model "%~dp0models\\suffix_classifier"
+echo.
+pause
+""",
+        encoding="utf-8",
+    )
+
+    (portable / "0_準備Ollama_AI.bat").write_text(
+        """@echo off
+chcp 65001 >nul
+cd /d "%~dp0"
+echo ========================================
+echo   準備本機 Ollama AI（睇圖改名）
+echo ========================================
+echo.
+echo 1) 請先安裝 Ollama： https://ollama.com/
+echo 2) 安裝後保持 Ollama 開住
+echo 3) 本腳本會下載 vision 模型 llava
+echo.
+
+where ollama >nul 2>&1
+if errorlevel 1 (
+  echo [錯誤] 搵唔到 ollama 命令。
+  echo 請先去 https://ollama.com/ 安裝，然後重新開 cmd 再跑此 bat。
+  echo.
+  pause
+  exit /b 1
+)
+
+echo 檢查 Ollama 服務...
+curl -s http://127.0.0.1:11434/api/tags >nul 2>&1
+if errorlevel 1 (
+  echo [提示] Ollama 似乎未啟動，嘗試執行 ollama serve ...
+  start "" ollama serve
+  timeout /t 3 >nul
+)
+
+echo.
+echo 下載／更新模型：llava
+ollama pull llava
+if errorlevel 1 (
+  echo [錯誤] ollama pull llava 失敗
+  pause
+  exit /b 1
+)
+
+echo.
+echo 已準備完成。請執行「1_工作模式_自動改名.bat」
 echo.
 pause
 """,
@@ -199,11 +247,11 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
   - {clip_note}
   - 對色 OCR 需要 Tesseract：C:\\Program Files\\Tesseract-OCR
   - 色號表喺 reference\\ 資料夾
-  - （可選）AI 睇圖改名（Gemini 地區唔得就用 Qwen-VL）：
-    編輯 AI設定.txt，填阿里雲 DASHSCOPE API key，enabled=1
-    base_url=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    model=qwen-vl-plus；mode=always 會睇對色 + 角度相
-    或本機 Ollama（llava）完全離線
+  - （可選）本機 Ollama AI 睇圖改名（免費、無地區限制）：
+    安裝 https://ollama.com/ → 跑 0_準備Ollama_AI.bat → 保持 Ollama 開住
+    AI設定.txt 預設 model=llava、mode=always（對色 + 角度）
+    第一次下載模型需要網絡；之後可離線用
+
 
 手動：
   app\\{exe_name} work "待改名圖片" --model models\\suffix_classifier

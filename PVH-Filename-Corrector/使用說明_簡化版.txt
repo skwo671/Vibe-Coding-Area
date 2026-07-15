@@ -16,19 +16,19 @@ PVH 簡化改名工具
   - 色號例子：654-920 / 19-1555
   - 色名優先用 reference 色號表；OCR 讀到部份文字亦會模糊對照
 
-可選：AI 睇圖改名（對色相 + 角度相）
-  - Gemini 地區用唔到？改用：
-      1) 通義千問 Qwen-VL（建議，香港／新加坡／內地可用）
-         拎 key：阿里雲百煉／Model Studio
-         base_url=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-         model=qwen-vl-plus
-         （內地改：https://dashscope.aliyuncs.com/compatible-mode/v1）
-      2) OpenRouter：model=openrouter/free
-      3) 本機 Ollama：model=llava（完全免費）
-  - DeepSeek 官方 API 只得文字，睇唔到相
-  - 複製 AI設定.example.txt → AI設定.txt，填 api_key，enabled=1
+可選：本機 Ollama AI 睇圖改名（對色相 + 角度相，免費）
+  1) 安裝 https://ollama.com/
+  2) 雙擊 0_準備Ollama_AI.bat（會 ollama pull llava）
+  3) 保持 Ollama 開住
+  4) AI設定.txt 已預設：
+       enabled=1
+       base_url=http://127.0.0.1:11434/v1
+       model=llava
+       mode=always
+  5) 執行 1_工作模式_自動改名.bat
   - mode=always：每張都睇（對色 + AS/FRONT/SIDE/CORNER）
-  - 環境變數：DASHSCOPE_API_KEY
+  - 可選更強：model=llama3.2-vision / moondream
+  - 唔使雲端 API key；Gemini／DeepSeek 地區問題唔影響
   - 命令列：--ai / --no-ai / --ai-mode always|fallback|off
 
 兩個模式：

@@ -1,15 +1,14 @@
 """Optional AI vision helper for photo renaming (color + angle).
 
-Recommended providers for regions where Gemini is blocked:
-  - Alibaba DashScope Qwen-VL (HK/CN/Singapore friendly)
-  - OpenRouter vision models
-  - Local Ollama (llava)
+Default provider: local Ollama (free, no cloud, no region lock).
+  Install: https://ollama.com/ then `ollama pull llava`
+
+Also supports: Qwen-VL, OpenRouter, Gemini.
 
 Enabled via AI設定.txt or env:
   PVH_AI_ENABLED=1
-  PVH_AI_API_KEY=...   (or DASHSCOPE_API_KEY / OPENROUTER_API_KEY)
-  PVH_AI_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-  PVH_AI_MODEL=qwen-vl-plus
+  PVH_AI_BASE_URL=http://127.0.0.1:11434/v1
+  PVH_AI_MODEL=llava
   PVH_AI_MODE=always|fallback
 """
 
@@ -32,9 +31,9 @@ from pvh_filename.simple_ocr import ARCHROMA_CODE_RE, CWF_LABEL_RE
 
 CONFIG_NAMES = ("AI設定.txt", "ai_config.txt", "AI_CONFIG.txt")
 
-# Default: Qwen-VL international (works when Gemini region is blocked).
-DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-DEFAULT_MODEL = "qwen-vl-plus"
+# Default: local Ollama vision (free / offline-friendly).
+DEFAULT_BASE_URL = "http://127.0.0.1:11434/v1"
+DEFAULT_MODEL = "llava"
 
 
 @dataclass(frozen=True)
@@ -241,17 +240,73 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
     )
 
 
+def ollama_is_reachable(base_url: str = DEFAULT_BASE_URL, timeout_sec: float = 2.0) -> bool:
+    """Probe local Ollama HTTP API."""
+    root = (base_url or DEFAULT_BASE_URL).rstrip("/")
+    if root.endswith("/v1"):
+        root = root[:-3]
+    for path in ("/api/tags", "/"):
+        try:
+            req = urllib.request.Request(
+                f"{root}{path}",
+                headers={"User-Agent": "PVH-Filename-Corrector/ollama-check"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+                if 200 <= getattr(resp, "status", 200) < 300:
+                    return True
+        except Exception:
+            continue
+    return False
+
+
+def ollama_has_model(model: str, base_url: str = DEFAULT_BASE_URL, timeout_sec: float = 3.0) -> bool | None:
+    """Return True/False if tags listing works; None if Ollama unreachable."""
+    root = (base_url or DEFAULT_BASE_URL).rstrip("/")
+    if root.endswith("/v1"):
+        root = root[:-3]
+    try:
+        req = urllib.request.Request(
+            f"{root}/api/tags",
+            headers={"User-Agent": "PVH-Filename-Corrector/ollama-check"},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+    needle = (model or "").split(":")[0].lower()
+    for item in payload.get("models") or []:
+        name = str(item.get("name") or item.get("model") or "").lower()
+        if name == (model or "").lower() or name.startswith(needle + ":") or name == needle:
+            return True
+    return False
+
+
 def ai_status_message(cfg: AIColorConfig | None = None) -> str:
     cfg = cfg or load_ai_config()
     if not cfg.usable:
-        return "AI 改名: 未啟用（建議用通義千問 Qwen-VL／OpenRouter／本機 Ollama）"
+        return "AI 改名: 未啟用（本機 Ollama：裝 https://ollama.com/ 後 ollama pull llava）"
     where = f" / {Path(cfg.source).name}" if cfg.source else ""
     if cfg.is_deepseek() and not cfg.supports_vision():
         return (
             "AI 改名: DeepSeek 已設定但官方 API 唔支援睇相"
-            "（請改用 Qwen-VL 或 OpenRouter）"
+            "（請改用本機 Ollama llava）"
             f"{where}"
         )
+    if cfg.is_local():
+        if not ollama_is_reachable(cfg.base_url):
+            return (
+                "AI 改名: Ollama 未啟動（請開 Ollama 或執行 ollama serve）"
+                f"{where}"
+            )
+        has = ollama_has_model(cfg.model, cfg.base_url)
+        if has is False:
+            return (
+                f"AI 改名: Ollama 已開但未下載模型 {cfg.model}"
+                f"（請執行 ollama pull {cfg.model}）{where}"
+            )
+        return f"AI 改名: 已啟用 Ollama ({cfg.mode}, {cfg.model}{where})"
     if cfg.is_qwen():
         provider = "Qwen-VL"
     elif cfg.is_gemini():
@@ -260,8 +315,6 @@ def ai_status_message(cfg: AIColorConfig | None = None) -> str:
         provider = "OpenRouter"
     elif cfg.is_deepseek():
         provider = "DeepSeek"
-    elif cfg.is_local():
-        provider = "Ollama"
     else:
         provider = "AI"
     return f"AI 改名: 已啟用 {provider} ({cfg.mode}, {cfg.model}{where})"
@@ -467,7 +520,7 @@ def classify_photo_with_ai(
     *,
     master_names: list[str] | None = None,
     hint_text: str = "",
-    timeout_sec: float = 60.0,
+    timeout_sec: float | None = None,
 ) -> AIPhotoResult | None:
     """Classify a photo as color-card or angle, and extract rename fields."""
     if not cfg.usable:
@@ -476,11 +529,13 @@ def classify_photo_with_ai(
         return AIPhotoResult(
             note=(
                 "目前供應商唔支援睇相（例如 DeepSeek 官方 API）。"
-                "請改用通義千問 Qwen-VL："
-                "base_url=https://dashscope-intl.aliyuncs.com/compatible-mode/v1 "
-                "model=qwen-vl-plus"
+                "請改用本機 Ollama：base_url=http://127.0.0.1:11434/v1 model=llava"
             )
         )
+    if timeout_sec is None:
+        timeout_sec = 180.0 if cfg.is_local() else 60.0
+    if cfg.is_local() and not ollama_is_reachable(cfg.base_url):
+        return AIPhotoResult(note="Ollama 未啟動，請先開 Ollama（ollama serve）")
     names = [n for n in (master_names or []) if n][:50]
     name_hint = ""
     if names:
@@ -547,7 +602,7 @@ def read_color_card_with_ai(
     *,
     hint_text: str = "",
     master_names: list[str] | None = None,
-    timeout_sec: float = 45.0,
+    timeout_sec: float | None = None,
 ) -> AIColorResult | None:
     """Ask a vision LLM to read Archroma color name / code / CWF."""
     if not cfg.usable:
@@ -556,9 +611,13 @@ def read_color_card_with_ai(
         return AIColorResult(
             note=(
                 "目前供應商唔支援睇相（例如 DeepSeek 官方 API）。"
-                "請改用通義千問 Qwen-VL 或 OpenRouter。"
+                "請改用本機 Ollama llava。"
             )
         )
+    if timeout_sec is None:
+        timeout_sec = 180.0 if cfg.is_local() else 60.0
+    if cfg.is_local() and not ollama_is_reachable(cfg.base_url):
+        return AIColorResult(note="Ollama 未啟動，請先開 Ollama（ollama serve）")
     names = [n for n in (master_names or []) if n][:60]
     name_hint = ""
     if names:
