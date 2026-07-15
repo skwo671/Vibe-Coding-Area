@@ -136,14 +136,11 @@ def predict_work_folder(
             color_name = color_master.lookup_name(color_code) if color_master else ""
             if color_name:
                 suffix = f"{light}_{color_name}"
-                source = "ocr+color_master"
+                source = f"ocr+color_master/{light}"
             else:
                 suffix = f"{light}_{color_code}"
-                source = "ocr_color_code"
-            if light == "CWF":
-                reason = "有色號 + 有 CWF 標籤"
-            else:
-                reason = "有色號 + 無 CWF 標籤 → D65"
+                source = f"ocr_color_code/{light}"
+            reason = ""
         elif kind == "color":
             final_kind = "color"
             source = "model_color_no_ocr"

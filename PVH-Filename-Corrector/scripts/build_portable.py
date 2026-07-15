@@ -190,7 +190,8 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
    - 把你手動改正確嘅圖片放入「學習樣本」
      檔名例子：xxx_AS.jpg / xxx_FRONT.jpg / xxx_SIDE.jpg / xxx_CORNER.jpg / xxx_CWF_654-920.jpg
    - 雙擊 2_學習模式_訓練模型.bat
-   - 程式會記住呢批答案並重訓「角度 vs 對色」AI 模型
+   - 程式會記住答案並重訓模型；完成後會刪除「學習樣本」內嘅圖片/檔案
+     （說明用 .txt 會保留）
 
 注意：
   - {clip_note}
