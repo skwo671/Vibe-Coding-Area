@@ -78,6 +78,8 @@ def build_executable() -> Path:
         "--hidden-import",
         "pvh_filename.simple_as",
         "--hidden-import",
+        "pvh_filename.simple_angle_heuristics",
+        "--hidden-import",
         "pvh_filename.model",
         "--hidden-import",
         "pvh_filename.color_master",
@@ -112,12 +114,12 @@ def write_launchers(portable: Path, exe_name: str) -> None:
         encoding="utf-8",
     )
     (learn_dir / "請將已改正確檔名嘅圖片放喺呢度.txt").write_text(
-        """學習模式資料夾：
-  將你改正確名嘅圖片放入呢度，例如：
+        """請將已改正確檔名嘅圖片放喺呢度，例如：
     產品前綴_AS.jpg
     產品前綴_FRONT.jpg
+    產品前綴_SIDE.jpg
+    產品前綴_CORNER.jpg
     產品前綴_CWF_654-920.jpg
-    產品前綴_CWF_19-1555.jpg
   然後返回上一層，雙擊「2_學習模式_訓練模型.bat」
 """,
         encoding="utf-8",
@@ -178,7 +180,7 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
    - 把 TDS + 未改名圖片放入「待改名圖片」
    - 雙擊 1_工作模式_自動改名.bat
    - 規則：
-     * 對色相：圖片有布色卡／色號（如 654-920、19-1555）
+     * 對色相：有色號 + 有 CWF 標籤 → CWF；有色號但無 CWF → D65
      * 角度相 AS：兩個非常相近產品圖案
      * 角度相 FRONT：單一正面
      * 角度相 SIDE：側面

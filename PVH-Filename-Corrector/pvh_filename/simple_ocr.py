@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -12,6 +13,14 @@ import pytesseract
 from pvh_filename.simple_labels import COLOR_CODE_RE, extract_color_codes_from_text, normalize_color_code
 
 _TESSERACT_CONFIGURED = False
+CWF_LABEL_RE = re.compile(r"\bC\s*W\s*F\b", re.I)
+
+
+@dataclass(frozen=True)
+class ColorCardOCR:
+    color_code: str
+    has_cwf_label: bool
+    light_source: str  # "CWF" or "D65"
 
 
 def _configure_tesseract() -> None:
@@ -51,13 +60,19 @@ def tesseract_status_message() -> str:
     return "Tesseract: 未找到（對色相 OCR 需要安裝）"
 
 
-def _ocr_text(image: np.ndarray) -> str:
-    configs = [
-        "--psm 6 -c tessedit_char_whitelist=0123456789-",
-        "--psm 7 -c tessedit_char_whitelist=0123456789-",
-        "--psm 11 -c tessedit_char_whitelist=0123456789-",
-        "--psm 6",
-    ]
+def _ocr_text(image: np.ndarray, *, digits_only: bool = False) -> str:
+    if digits_only:
+        configs = [
+            "--psm 6 -c tessedit_char_whitelist=0123456789-",
+            "--psm 7 -c tessedit_char_whitelist=0123456789-",
+            "--psm 11 -c tessedit_char_whitelist=0123456789-",
+        ]
+    else:
+        configs = [
+            "--psm 6",
+            "--psm 11",
+            "--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-",
+        ]
     texts: list[str] = []
     for config in configs:
         try:
@@ -92,8 +107,21 @@ def _variants(region: np.ndarray) -> list[np.ndarray]:
     return [gray, denoised, otsu, cv2.bitwise_not(otsu), adaptive, cv2.bitwise_not(adaptive)]
 
 
-def detect_color_card_code(path: Path) -> str | None:
-    """Return color code if a fabric color card number is visible."""
+def _has_cwf_label(text: str) -> bool:
+    compact = re.sub(r"[\s\-_.]", "", text.upper())
+    if "CWF" in compact:
+        return True
+    return bool(CWF_LABEL_RE.search(text))
+
+
+def detect_color_card(path: Path) -> ColorCardOCR | None:
+    """
+    Detect fabric color-card info.
+
+    Rule:
+      - color code + CWF label  → CWF
+      - color code without CWF  → D65
+    """
     _configure_tesseract()
     if not tesseract_is_available():
         return None
@@ -103,15 +131,19 @@ def detect_color_card_code(path: Path) -> str | None:
         return None
 
     candidates: list[str] = []
+    saw_cwf = False
     try:
         for region in _regions(image):
             for variant in _variants(region):
-                text = _ocr_text(variant)
-                candidates.extend(extract_color_codes_from_text(text))
-                # Also catch codes glued by OCR without separators via raw regex.
+                digit_text = _ocr_text(variant, digits_only=True)
+                full_text = _ocr_text(variant, digits_only=False)
+                combined = f"{digit_text}\n{full_text}"
+                if _has_cwf_label(combined):
+                    saw_cwf = True
+                candidates.extend(extract_color_codes_from_text(combined))
                 candidates.extend(
                     normalize_color_code(m.group(0))
-                    for m in COLOR_CODE_RE.finditer(re.sub(r"\s+", " ", text))
+                    for m in COLOR_CODE_RE.finditer(re.sub(r"\s+", " ", combined))
                 )
     except Exception:
         return None
@@ -119,7 +151,13 @@ def detect_color_card_code(path: Path) -> str | None:
     if not candidates:
         return None
 
-    # Prefer hyphenated codes (654-920 / 19-1555) over plain 6-digit.
     candidates = list(dict.fromkeys(candidates))
     candidates.sort(key=lambda c: (("-" not in c), len(c), c))
-    return candidates[0]
+    code = candidates[0]
+    light = "CWF" if saw_cwf else "D65"
+    return ColorCardOCR(color_code=code, has_cwf_label=saw_cwf, light_source=light)
+
+
+def detect_color_card_code(path: Path) -> str | None:
+    result = detect_color_card(path)
+    return result.color_code if result else None

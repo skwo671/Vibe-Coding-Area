@@ -23,7 +23,7 @@ from pvh_filename.simple_model import (
     default_angle_model_path,
     default_simple_model_path,
 )
-from pvh_filename.simple_ocr import detect_color_card_code, tesseract_status_message
+from pvh_filename.simple_ocr import detect_color_card, tesseract_status_message
 
 
 def _unique_name(folder: Path, filename: str, taken: set[str]) -> str:
@@ -122,22 +122,28 @@ def predict_work_folder(
     taken: set[str] = set()
 
     for path, kind, conf in zip(images, kinds, kind_confs, strict=True):
-        color_code = detect_color_card_code(path) or ""
+        color_ocr = detect_color_card(path)
+        color_code = color_ocr.color_code if color_ocr else ""
         suffix = ""
         source = "model"
         reason = ""
         final_kind = kind
         embedding = emb_map.get(str(path))
 
-        if color_code:
+        if color_ocr:
             final_kind = "color"
+            light = color_ocr.light_source  # CWF if label present, else D65
             color_name = color_master.lookup_name(color_code) if color_master else ""
             if color_name:
-                suffix = f"CWF_{color_name}"
+                suffix = f"{light}_{color_name}"
                 source = "ocr+color_master"
             else:
-                suffix = f"CWF_{color_code}"
+                suffix = f"{light}_{color_code}"
                 source = "ocr_color_code"
+            if light == "CWF":
+                reason = "有色號 + 有 CWF 標籤"
+            else:
+                reason = "有色號 + 無 CWF 標籤 → D65"
         elif kind == "color":
             final_kind = "color"
             source = "model_color_no_ocr"
@@ -175,6 +181,7 @@ def predict_work_folder(
                 "folder_prefix": prefix,
                 "predicted_kind": final_kind,
                 "color_code": color_code,
+                "light_source": color_ocr.light_source if color_ocr else "",
                 "suffix": suffix,
                 "suffix_source": source,
                 "proposed_name": proposed,
@@ -204,6 +211,7 @@ def predict_work_folder(
             "folder_prefix",
             "predicted_kind",
             "color_code",
+            "light_source",
             "suffix",
             "suffix_source",
             "proposed_name",
