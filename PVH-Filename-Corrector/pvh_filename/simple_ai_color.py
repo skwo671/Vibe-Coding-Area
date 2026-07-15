@@ -139,9 +139,11 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
         os.environ.get("PVH_AI_API_KEY")
         or os.environ.get("GEMINI_API_KEY")
         or os.environ.get("GOOGLE_API_KEY")
+        or os.environ.get("DEEPSEEK_API_KEY")
         or os.environ.get("OPENAI_API_KEY")
         or file_data.get("api_key")
         or file_data.get("gemini_api_key")
+        or file_data.get("deepseek_api_key")
         or file_data.get("openai_api_key")
         or ""
     ).strip()
