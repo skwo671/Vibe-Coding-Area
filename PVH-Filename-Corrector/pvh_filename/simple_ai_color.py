@@ -60,6 +60,11 @@ class AIColorConfig:
         model = (self.model or "").lower()
         return "generativelanguage.googleapis.com" in host or model.startswith("gemini")
 
+    def is_deepseek(self) -> bool:
+        host = (self.base_url or "").lower()
+        model = (self.model or "").lower()
+        return "api.deepseek.com" in host or model.startswith("deepseek")
+
     @property
     def usable(self) -> bool:
         if not self.enabled or self.mode == "off":
@@ -194,7 +199,7 @@ def ai_status_message(cfg: AIColorConfig | None = None) -> str:
     if not cfg.usable:
         return "AI 色名: 未啟用（可設 AI設定.txt + Gemini API key）"
     where = f" / {Path(cfg.source).name}" if cfg.source else ""
-    provider = "Gemini" if cfg.is_gemini() else "AI"
+    provider = "Gemini" if cfg.is_gemini() else "DeepSeek" if cfg.is_deepseek() else "AI"
     return f"AI 色名: 已啟用 {provider} ({cfg.mode}, {cfg.model}{where})"
 
 
