@@ -35,11 +35,29 @@ class AIColorConfig:
     api_key: str = ""
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4o-mini"
+    json_mode: bool = True
     source: str = ""
+
+    def is_local(self) -> bool:
+        host = (self.base_url or "").lower()
+        return any(
+            token in host
+            for token in (
+                "127.0.0.1",
+                "localhost",
+                "0.0.0.0",
+                "::1",
+            )
+        )
 
     @property
     def usable(self) -> bool:
-        return bool(self.enabled and self.api_key and self.mode != "off")
+        if not self.enabled or self.mode == "off":
+            return False
+        # Local Ollama / LM Studio usually accept any/empty key.
+        if self.is_local():
+            return True
+        return bool(self.api_key)
 
 
 @dataclass(frozen=True)
@@ -122,14 +140,28 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
     model = (
         os.environ.get("PVH_AI_MODEL") or file_data.get("model") or "gpt-4o-mini"
     ).strip()
+    json_mode_raw = os.environ.get("PVH_AI_JSON_MODE") or file_data.get("json_mode", "1")
+    json_mode = _parse_bool(str(json_mode_raw))
 
-    enabled = _parse_bool(str(enabled_raw)) and mode != "off" and bool(api_key)
-    return AIColorConfig(
-        enabled=enabled,
-        mode=mode if enabled else "off",
+    cfg = AIColorConfig(
+        enabled=False,
+        mode=mode,
         api_key=api_key,
         base_url=base_url,
         model=model,
+        json_mode=json_mode,
+        source=source,
+    )
+    enabled = _parse_bool(str(enabled_raw)) and mode != "off" and (
+        bool(api_key) or cfg.is_local()
+    )
+    return AIColorConfig(
+        enabled=enabled,
+        mode=mode if enabled else "off",
+        api_key=api_key or ("ollama" if cfg.is_local() else ""),
+        base_url=base_url,
+        model=model,
+        json_mode=json_mode,
         source=source,
     )
 
@@ -255,42 +287,57 @@ def read_color_card_with_ai(
     if name_hint:
         prompt += f"\n{name_hint}\n"
 
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ],
+        }
+    ]
     body = {
         "model": cfg.model,
         "temperature": 0,
-        "response_format": {"type": "json_object"},
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": data_url}},
-                ],
-            }
-        ],
+        "messages": messages,
     }
+    if cfg.json_mode:
+        body["response_format"] = {"type": "json_object"}
 
-    url = f"{cfg.base_url}/chat/completions"
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {cfg.api_key}",
-            "User-Agent": "PVH-Filename-Corrector/ai-color",
-        },
-        method="POST",
-    )
-    try:
+    url = f"{cfg.base_url.rstrip('/')}/chat/completions"
+
+    def _post(request_body: dict) -> dict:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(request_body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {cfg.api_key or 'ollama'}",
+                "User-Agent": "PVH-Filename-Corrector/ai-color",
+            },
+            method="POST",
+        )
         with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
+            return json.loads(resp.read().decode("utf-8"))
+
+    try:
+        payload = _post(body)
     except urllib.error.HTTPError as exc:
         detail = ""
         try:
-            detail = exc.read().decode("utf-8", errors="replace")[:300]
+            detail = exc.read().decode("utf-8", errors="replace")[:400]
         except Exception:
             detail = str(exc)
-        return AIColorResult(note=f"AI HTTP {exc.code}: {detail}")
+        # Many free / local models reject response_format=json_object — retry once.
+        if cfg.json_mode and "response_format" in body and exc.code in {400, 404, 422}:
+            retry_body = dict(body)
+            retry_body.pop("response_format", None)
+            try:
+                payload = _post(retry_body)
+            except Exception as retry_exc:
+                return AIColorResult(note=f"AI HTTP {exc.code}: {detail}; retry: {retry_exc}")
+        else:
+            return AIColorResult(note=f"AI HTTP {exc.code}: {detail}")
     except Exception as exc:
         return AIColorResult(note=f"AI error: {exc}")
 
@@ -298,8 +345,13 @@ def read_color_card_with_ai(
         content = payload["choices"][0]["message"]["content"]
     except Exception:
         return AIColorResult(note="AI response missing content")
+    if isinstance(content, list):
+        content = " ".join(
+            str(part.get("text", part)) if isinstance(part, dict) else str(part)
+            for part in content
+        )
 
-    parsed = _parse_ai_payload(_extract_json_object(content))
+    parsed = _parse_ai_payload(_extract_json_object(str(content)))
     if not parsed.color_code and not parsed.color_name:
         return AIColorResult(note=parsed.note or "AI did not find color code/name")
     return parsed

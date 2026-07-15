@@ -58,16 +58,27 @@ def resolve_target(folder: Path | None) -> Path:
 def resolve_ai_config(folder: Path, args: argparse.Namespace) -> AIColorConfig:
     cfg = load_ai_config(folder)
     if args.no_ai:
-        return AIColorConfig(enabled=False, mode="off", source=cfg.source)
+        return AIColorConfig(enabled=False, mode="off", json_mode=cfg.json_mode, source=cfg.source)
     if args.ai:
         api_key = cfg.api_key or os.environ.get("OPENAI_API_KEY", "")
         mode = args.ai_mode or (cfg.mode if cfg.mode != "off" else "fallback")
-        return AIColorConfig(
-            enabled=bool(api_key),
-            mode=mode if api_key else "off",
+        probe = AIColorConfig(
+            enabled=True,
+            mode=mode,
             api_key=api_key,
             base_url=cfg.base_url,
             model=args.ai_model or cfg.model,
+            json_mode=cfg.json_mode,
+            source=cfg.source or "cli --ai",
+        )
+        ok = bool(api_key) or probe.is_local()
+        return AIColorConfig(
+            enabled=ok,
+            mode=mode if ok else "off",
+            api_key=api_key or ("ollama" if probe.is_local() else ""),
+            base_url=cfg.base_url,
+            model=args.ai_model or cfg.model,
+            json_mode=cfg.json_mode,
             source=cfg.source or "cli --ai",
         )
     if args.ai_mode:
@@ -77,6 +88,7 @@ def resolve_ai_config(folder: Path, args: argparse.Namespace) -> AIColorConfig:
             api_key=cfg.api_key,
             base_url=cfg.base_url,
             model=args.ai_model or cfg.model,
+            json_mode=cfg.json_mode,
             source=cfg.source,
         )
     if args.ai_model and cfg.usable:
@@ -86,6 +98,7 @@ def resolve_ai_config(folder: Path, args: argparse.Namespace) -> AIColorConfig:
             api_key=cfg.api_key,
             base_url=cfg.base_url,
             model=args.ai_model,
+            json_mode=cfg.json_mode,
             source=cfg.source,
         )
     return cfg
