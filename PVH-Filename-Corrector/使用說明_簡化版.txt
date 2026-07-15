@@ -16,15 +16,17 @@ PVH 簡化改名工具
   - 色號例子：654-920 / 19-1555
   - 色名優先用 reference 色號表；OCR 讀到部份文字亦會模糊對照
 
-可選：AI 協助改色名（預設 Google Gemini；亦可用 DeepSeek）
-  - Gemini：https://aistudio.google.com/apikey （免費額度）
-  - DeepSeek：https://platform.deepseek.com/ （支援睇相，好平）
-      base_url=https://api.deepseek.com
-      model=deepseek-v4-flash（或 deepseek-v4-pro）
-  - 複製 AI設定.example.txt → AI設定.txt，填 api_key，enabled=1
-  - mode=fallback：OCR 失敗先問 AI
-  - 環境變數：GEMINI_API_KEY 或 DEEPSEEK_API_KEY
-  - 命令列：--ai / --no-ai / --ai-mode fallback|always|off
+可選：AI 睇圖改名（對色相 + 角度相）
+  - 要用支援睇相嘅模型：Google Gemini（建議，免費）
+  - DeepSeek 官方 API 而家只得文字，睇唔到對色/角度相
+  - 複製 AI設定.example.txt → AI設定.txt
+  - Gemini：https://aistudio.google.com/apikey → 填 api_key，enabled=1
+      base_url=https://generativelanguage.googleapis.com/v1beta/openai
+      model=gemini-2.0-flash
+  - mode=always：每張都俾 AI 睇（對色 + AS/FRONT/SIDE/CORNER）
+  - mode=fallback：OCR／模型唔穩先問 AI
+  - 環境變數：GEMINI_API_KEY
+  - 命令列：--ai / --no-ai / --ai-mode always|fallback|off
 
 兩個模式：
   1_工作模式_自動改名.bat

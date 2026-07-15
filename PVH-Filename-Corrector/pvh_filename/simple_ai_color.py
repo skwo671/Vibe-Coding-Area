@@ -24,7 +24,7 @@ from pathlib import Path
 import cv2
 
 from pvh_filename.runtime import portable_root
-from pvh_filename.simple_labels import normalize_token
+from pvh_filename.simple_labels import ANGLE_ALIAS, ANGLE_LABELS, normalize_token
 from pvh_filename.simple_ocr import ARCHROMA_CODE_RE, CWF_LABEL_RE
 
 CONFIG_NAMES = ("AI設定.txt", "ai_config.txt", "AI_CONFIG.txt")
@@ -65,6 +65,12 @@ class AIColorConfig:
         model = (self.model or "").lower()
         return "api.deepseek.com" in host or model.startswith("deepseek")
 
+    def supports_vision(self) -> bool:
+        """DeepSeek official API is text-only (no image_url)."""
+        if self.is_deepseek():
+            return False
+        return True
+
     @property
     def usable(self) -> bool:
         if not self.enabled or self.mode == "off":
@@ -82,6 +88,27 @@ class AIColorResult:
     has_cwf_label: bool = False
     light_source: str = "D65"
     note: str = ""
+
+
+@dataclass(frozen=True)
+class AIPhotoResult:
+    """Unified AI classification for rename: color card or product angle."""
+
+    kind: str = ""  # color | angle
+    angle: str = ""  # AS | FRONT | SIDE | CORNER
+    color_code: str = ""
+    color_name: str = ""
+    has_cwf_label: bool = False
+    light_source: str = "D65"
+    note: str = ""
+
+    @property
+    def usable_color(self) -> bool:
+        return self.kind == "color" and bool(self.color_code or self.color_name)
+
+    @property
+    def usable_angle(self) -> bool:
+        return self.kind == "angle" and self.angle in ANGLE_LABELS
 
 
 def _parse_bool(value: str) -> bool:
@@ -199,8 +226,14 @@ def ai_status_message(cfg: AIColorConfig | None = None) -> str:
     if not cfg.usable:
         return "AI 色名: 未啟用（可設 AI設定.txt + Gemini API key）"
     where = f" / {Path(cfg.source).name}" if cfg.source else ""
+    if cfg.is_deepseek() and not cfg.supports_vision():
+        return (
+            "AI 色名: DeepSeek 已設定但官方 API 唔支援睇相"
+            "（對色/角度請改用 Gemini）"
+            f"{where}"
+        )
     provider = "Gemini" if cfg.is_gemini() else "DeepSeek" if cfg.is_deepseek() else "AI"
-    return f"AI 色名: 已啟用 {provider} ({cfg.mode}, {cfg.model}{where})"
+    return f"AI 改名: 已啟用 {provider} ({cfg.mode}, {cfg.model}{where})"
 
 
 def _image_to_data_url(path: Path, max_side: int = 1280) -> str | None:
@@ -280,6 +313,202 @@ def _parse_ai_payload(data: dict) -> AIColorResult:
     )
 
 
+def _chat_vision_json(
+    path: Path,
+    cfg: AIColorConfig,
+    prompt: str,
+    *,
+    timeout_sec: float = 60.0,
+) -> tuple[dict, str]:
+    """
+    Send image + prompt to OpenAI-compatible vision chat.
+    Returns (parsed_json, error_note). error_note set on failure.
+    """
+    data_url = _image_to_data_url(path)
+    if not data_url:
+        return {}, "failed to load image"
+
+    body = {
+        "model": cfg.model,
+        "temperature": 0,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                ],
+            }
+        ],
+    }
+    if cfg.json_mode:
+        body["response_format"] = {"type": "json_object"}
+
+    url = f"{cfg.base_url.rstrip('/')}/chat/completions"
+
+    def _post(request_body: dict) -> dict:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(request_body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {cfg.api_key or 'ollama'}",
+                "User-Agent": "PVH-Filename-Corrector/ai-vision",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    try:
+        payload = _post(body)
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            detail = exc.read().decode("utf-8", errors="replace")[:400]
+        except Exception:
+            detail = str(exc)
+        if cfg.json_mode and "response_format" in body and exc.code in {400, 404, 422}:
+            retry_body = dict(body)
+            retry_body.pop("response_format", None)
+            try:
+                payload = _post(retry_body)
+            except Exception as retry_exc:
+                return {}, f"AI HTTP {exc.code}: {detail}; retry: {retry_exc}"
+        else:
+            return {}, f"AI HTTP {exc.code}: {detail}"
+    except Exception as exc:
+        return {}, f"AI error: {exc}"
+
+    try:
+        content = payload["choices"][0]["message"]["content"]
+    except Exception:
+        return {}, "AI response missing content"
+    if isinstance(content, list):
+        content = " ".join(
+            str(part.get("text", part)) if isinstance(part, dict) else str(part)
+            for part in content
+        )
+    return _extract_json_object(str(content)), ""
+
+
+def _normalize_angle_label(value: object) -> str:
+    text = normalize_token(str(value or ""))
+    if not text:
+        return ""
+    if text in ANGLE_LABELS:
+        return text
+    return ANGLE_ALIAS.get(text, "")
+
+
+def _parse_photo_payload(data: dict) -> AIPhotoResult:
+    kind = normalize_token(str(data.get("kind") or data.get("type") or "")).lower()
+    if kind in {"color", "colour", "swatch", "color_card", "colorcard"}:
+        kind = "color"
+    elif kind in {"angle", "product", "garment", "label"}:
+        kind = "angle"
+    else:
+        # Infer from fields.
+        if data.get("color_code") or data.get("color_name") or data.get("code"):
+            kind = "color"
+        elif data.get("angle") or data.get("view"):
+            kind = "angle"
+        else:
+            kind = ""
+
+    color = _parse_ai_payload(data)
+    angle = _normalize_angle_label(data.get("angle") or data.get("view") or data.get("suffix"))
+    note = str(data.get("note") or data.get("reason") or color.note or "").strip()
+    return AIPhotoResult(
+        kind=kind,
+        angle=angle,
+        color_code=color.color_code,
+        color_name=color.color_name,
+        has_cwf_label=color.has_cwf_label,
+        light_source=color.light_source,
+        note=note,
+    )
+
+
+def classify_photo_with_ai(
+    path: Path,
+    cfg: AIColorConfig,
+    *,
+    master_names: list[str] | None = None,
+    hint_text: str = "",
+    timeout_sec: float = 60.0,
+) -> AIPhotoResult | None:
+    """Classify a photo as color-card or angle, and extract rename fields."""
+    if not cfg.usable:
+        return None
+    if not cfg.supports_vision():
+        return AIPhotoResult(
+            note=(
+                "目前供應商唔支援睇相（例如 DeepSeek 官方 API）。"
+                "請改用 Google Gemini：base_url="
+                "https://generativelanguage.googleapis.com/v1beta/openai"
+            )
+        )
+    names = [n for n in (master_names or []) if n][:50]
+    name_hint = ""
+    if names:
+        name_hint = "Known Archroma color names (prefer exact match):\n" + ", ".join(names)
+
+    prompt = (
+        "You rename Tommy Hilfiger product photos for a factory workflow.\n"
+        "Decide if this image is a COLOR swatch card or an ANGLE product shot.\n"
+        "Return ONLY one JSON object with keys:\n"
+        '  kind: "color" or "angle"\n'
+        '  angle: one of "AS","FRONT","SIDE","CORNER" (only when kind=angle; else "")\n'
+        '  color_code: like "654-920" (only when kind=color; else "")\n'
+        '  color_name: like "DESERT SKY" (only when kind=color; else "")\n'
+        "  has_cwf_label: boolean true ONLY if a CWF sticker/label is visible\n"
+        "  note: short reason\n"
+        "Rules for COLOR:\n"
+        "- Archroma white header card with fabric swatch, printed name + ###-### code.\n"
+        "- has_cwf_label true only with a clear CWF label/sticker.\n"
+        "Rules for ANGLE:\n"
+        "- AS: two almost identical product patterns side-by-side (actual size duplicates).\n"
+        "- FRONT: single product / woven label shown mostly from the front.\n"
+        "- SIDE: product / label shown from the side profile.\n"
+        "- CORNER: product / label corner/edge-focused view.\n"
+        "- If unsure between FRONT/SIDE/CORNER, prefer FRONT.\n"
+        "- Do not wrap JSON in markdown fences.\n"
+    )
+    if hint_text:
+        prompt += f"\nHint:\n{hint_text[:400]}\n"
+    if name_hint:
+        prompt += f"\n{name_hint}\n"
+
+    data, err = _chat_vision_json(path, cfg, prompt, timeout_sec=timeout_sec)
+    if err and not data:
+        return AIPhotoResult(note=err)
+    parsed = _parse_photo_payload(data)
+    if not parsed.kind:
+        return AIPhotoResult(note=parsed.note or err or "AI did not classify photo")
+    if parsed.kind == "color" and not (parsed.color_code or parsed.color_name):
+        return AIPhotoResult(
+            kind="color",
+            note=parsed.note or "AI said color but found no code/name",
+        )
+    if parsed.kind == "angle" and parsed.angle not in ANGLE_LABELS:
+        return AIPhotoResult(
+            kind="angle",
+            note=parsed.note or "AI said angle but gave no valid AS/FRONT/SIDE/CORNER",
+        )
+    if err and not parsed.note:
+        return AIPhotoResult(
+            kind=parsed.kind,
+            angle=parsed.angle,
+            color_code=parsed.color_code,
+            color_name=parsed.color_name,
+            has_cwf_label=parsed.has_cwf_label,
+            light_source=parsed.light_source,
+            note=err,
+        )
+    return parsed
+
+
 def read_color_card_with_ai(
     path: Path,
     cfg: AIColorConfig,
@@ -291,11 +520,13 @@ def read_color_card_with_ai(
     """Ask a vision LLM to read Archroma color name / code / CWF."""
     if not cfg.usable:
         return None
-
-    data_url = _image_to_data_url(path)
-    if not data_url:
-        return None
-
+    if not cfg.supports_vision():
+        return AIColorResult(
+            note=(
+                "目前供應商唔支援睇相（例如 DeepSeek 官方 API）。"
+                "請改用 Google Gemini。"
+            )
+        )
     names = [n for n in (master_names or []) if n][:60]
     name_hint = ""
     if names:
@@ -321,73 +552,20 @@ def read_color_card_with_ai(
     if name_hint:
         prompt += f"\n{name_hint}\n"
 
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": data_url}},
-            ],
-        }
-    ]
-    body = {
-        "model": cfg.model,
-        "temperature": 0,
-        "messages": messages,
-    }
-    if cfg.json_mode:
-        body["response_format"] = {"type": "json_object"}
-
-    url = f"{cfg.base_url.rstrip('/')}/chat/completions"
-
-    def _post(request_body: dict) -> dict:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(request_body).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {cfg.api_key or 'ollama'}",
-                "User-Agent": "PVH-Filename-Corrector/ai-color",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-
-    try:
-        payload = _post(body)
-    except urllib.error.HTTPError as exc:
-        detail = ""
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")[:400]
-        except Exception:
-            detail = str(exc)
-        # Many free / local models reject response_format=json_object — retry once.
-        if cfg.json_mode and "response_format" in body and exc.code in {400, 404, 422}:
-            retry_body = dict(body)
-            retry_body.pop("response_format", None)
-            try:
-                payload = _post(retry_body)
-            except Exception as retry_exc:
-                return AIColorResult(note=f"AI HTTP {exc.code}: {detail}; retry: {retry_exc}")
-        else:
-            return AIColorResult(note=f"AI HTTP {exc.code}: {detail}")
-    except Exception as exc:
-        return AIColorResult(note=f"AI error: {exc}")
-
-    try:
-        content = payload["choices"][0]["message"]["content"]
-    except Exception:
-        return AIColorResult(note="AI response missing content")
-    if isinstance(content, list):
-        content = " ".join(
-            str(part.get("text", part)) if isinstance(part, dict) else str(part)
-            for part in content
-        )
-
-    parsed = _parse_ai_payload(_extract_json_object(str(content)))
+    data, err = _chat_vision_json(path, cfg, prompt, timeout_sec=timeout_sec)
+    if err and not data:
+        return AIColorResult(note=err)
+    parsed = _parse_ai_payload(data)
     if not parsed.color_code and not parsed.color_name:
-        return AIColorResult(note=parsed.note or "AI did not find color code/name")
+        return AIColorResult(note=parsed.note or err or "AI did not find color code/name")
+    if err and not parsed.note:
+        return AIColorResult(
+            color_code=parsed.color_code,
+            color_name=parsed.color_name,
+            has_cwf_label=parsed.has_cwf_label,
+            light_source=parsed.light_source,
+            note=err,
+        )
     return parsed
 
 
@@ -408,3 +586,22 @@ def should_ask_ai(
     if has_color_code and has_color_name:
         return False
     return True
+
+
+def should_ask_ai_angle(
+    cfg: AIColorConfig,
+    *,
+    local_suffix: str,
+    local_source: str,
+) -> bool:
+    """Whether to ask AI for angle classification."""
+    if not cfg.usable:
+        return False
+    if cfg.mode == "always":
+        return True
+    # fallback: only when local path was weak/default.
+    if local_source in {"single_product", "model"}:
+        return True
+    if local_suffix == "FRONT" and local_source.startswith("heuristic"):
+        return True
+    return False

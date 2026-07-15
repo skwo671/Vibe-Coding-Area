@@ -1,37 +1,25 @@
-# AI 色名協助設定
-# 複製此檔為 AI設定.txt，擇一方案填 key，再將 enabled=1
-# 放喺工具根目錄，或「待改名圖片」資料夾內皆可
+# AI 睇圖改名（對色相 + 角度相）
+# 複製為 AI設定.txt，填 api_key，enabled=1
+#
+# ★ 需要支援「睇相」的 API：
+#   OK：Google Gemini / OpenRouter vision / 本機 Ollama(llava)
+#   NG：DeepSeek 官方 API（只得文字，唔支援 image）
 
-# ========== 方案 A：Google Gemini（預設／免費額度）==========
+# ========== 推薦：Google Gemini（免費額度，可睇相）==========
 enabled=0
-mode=fallback
+mode=always
 json_mode=0
 api_key=
 base_url=https://generativelanguage.googleapis.com/v1beta/openai
 model=gemini-2.0-flash
 
 # 拎 key：https://aistudio.google.com/apikey
-# 可選模型：gemini-2.0-flash / gemini-2.5-flash / gemini-2.5-pro
+# mode=always → 每張相都俾 AI 睇（對色 + AS/FRONT/SIDE/CORNER）
+# mode=fallback → OCR／本地模型唔穩先問 AI
 
-# ========== 方案 B：DeepSeek（支援睇相，好平）==========
-# 拎 key：https://platform.deepseek.com/
-# 用下面整段取代上面（或只改呢幾行）：
-#
+# ========== DeepSeek（官方 API 而家唔支援睇相）==========
+# 唔好用嚟做對色/角度睇圖改名；會報錯。
 # enabled=1
-# mode=fallback
-# json_mode=0
-# api_key=sk-你的_DeepSeek_key
+# api_key=sk-...
 # base_url=https://api.deepseek.com
 # model=deepseek-v4-flash
-#
-# 較準可用：model=deepseek-v4-pro
-# 環境變數：DEEPSEEK_API_KEY=sk-...
-
-# mode 說明：
-#   fallback = OCR 讀唔到色號/色名時先叫 AI（省額度，建議）
-#   always   = 對色相都問 AI
-#   off      = 關閉
-#
-# 其他：
-# OpenRouter: base_url=https://openrouter.ai/api/v1  model=openrouter/free
-# Ollama本機: base_url=http://127.0.0.1:11434/v1  model=llava  api_key=ollama

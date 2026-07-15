@@ -10,10 +10,13 @@ from pvh_filename.color_master import ColorMasterLookup, resolve_color_master
 from pvh_filename.model import ClipEmbedder, HierarchicalClassifier, default_model_path
 from pvh_filename.simple_ai_color import (
     AIColorConfig,
+    AIPhotoResult,
     ai_status_message,
+    classify_photo_with_ai,
     load_ai_config,
     read_color_card_with_ai,
     should_ask_ai,
+    should_ask_ai_angle,
 )
 from pvh_filename.simple_angle_heuristics import looks_like_corner, looks_like_side_view
 from pvh_filename.simple_as import has_two_similar_products
@@ -143,34 +146,98 @@ def _map_legacy_angle(suffix: str) -> str:
     return ANGLE_ALIAS.get(normalize_token(suffix), "FRONT")
 
 
+def _apply_ai_photo_result(
+    ai: AIPhotoResult,
+    color_master: ColorMasterLookup | None,
+) -> tuple[str, str, str, str, str, str]:
+    """
+    Convert AI photo result into rename fields.
+
+    Returns: final_kind, color_code, light_source, suffix, source, reason
+    """
+    if ai.usable_color:
+        light = "CWF" if ai.has_cwf_label else (ai.light_source or "D65")
+        name, name_src = _pick_color_name(ai.color_code, ai.color_name, color_master)
+        if name:
+            return (
+                "color",
+                ai.color_code,
+                light,
+                f"{light}_{name}",
+                f"ai+{name_src or 'name'}/{light}",
+                "",
+            )
+        if ai.color_code:
+            return (
+                "color",
+                ai.color_code,
+                light,
+                f"{light}_{ai.color_code}",
+                f"ai+color_code/{light}",
+                "",
+            )
+        return "color", "", light, "", "ai_color_incomplete", ai.note or "AI 判斷為對色相但缺色號/色名"
+
+    if ai.usable_angle:
+        return "angle", "", "", ai.angle, f"ai_angle/{ai.angle}", ""
+
+    return "", "", "", "", "ai_unusable", ai.note or "AI 未能分類"
+
+
 def _resolve_angle_suffix(
     path: Path,
     embedding: np.ndarray | None,
     angle_clf: SimpleKindClassifier | None,
     legacy: HierarchicalClassifier | None,
+    ai_cfg: AIColorConfig | None = None,
+    color_master: ColorMasterLookup | None = None,
 ) -> tuple[str, str]:
     """Pick AS / FRONT / SIDE / CORNER for an angle shot."""
     if has_two_similar_products(path):
-        return "AS", "duplicate_pattern"
-
-    if angle_clf is not None and embedding is not None:
+        local_suffix, local_source = "AS", "duplicate_pattern"
+    elif angle_clf is not None and embedding is not None:
         labels, confs = angle_clf.predict_kind(embedding.reshape(1, -1))
         label = normalize_token(labels[0])
         if label in ANGLE_LABELS and confs[0] >= 0.35:
-            return label, "angle_model"
+            local_suffix, local_source = label, "angle_model"
+        else:
+            local_suffix, local_source = "", ""
+    else:
+        local_suffix, local_source = "", ""
 
-    if legacy is not None and embedding is not None:
+    if not local_suffix and legacy is not None and embedding is not None:
         suffixes, kinds, confs = legacy.predict(embedding.reshape(1, -1))
         if kinds and kinds[0] == "angle":
             mapped = _map_legacy_angle(suffixes[0])
             if mapped in ANGLE_LABELS:
-                return mapped, "legacy_angle_model"
+                local_suffix, local_source = mapped, "legacy_angle_model"
 
-    if looks_like_side_view(path):
-        return "SIDE", "heuristic_side"
-    if looks_like_corner(path):
-        return "CORNER", "heuristic_corner"
-    return "FRONT", "single_product"
+    if not local_suffix:
+        if looks_like_side_view(path):
+            local_suffix, local_source = "SIDE", "heuristic_side"
+        elif looks_like_corner(path):
+            local_suffix, local_source = "CORNER", "heuristic_corner"
+        else:
+            local_suffix, local_source = "FRONT", "single_product"
+
+    if ai_cfg and should_ask_ai_angle(ai_cfg, local_suffix=local_suffix, local_source=local_source):
+        master_names = color_master.unique_names() if color_master else []
+        ai = classify_photo_with_ai(
+            path,
+            ai_cfg,
+            master_names=master_names,
+            hint_text=f"local_guess={local_suffix}/{local_source}",
+        )
+        if ai is not None:
+            if ai.usable_angle:
+                return ai.angle, f"ai_angle/{ai.angle}"
+            if ai.usable_color:
+                # Rare: local thought angle, AI says color — leave angle fallback but mark.
+                kind, code, light, suffix, source, _reason = _apply_ai_photo_result(ai, color_master)
+                if suffix and kind == "color":
+                    return suffix, source
+
+    return local_suffix, local_source
 
 
 def predict_work_folder(
@@ -230,29 +297,77 @@ def predict_work_folder(
         light_source = color_ocr.light_source if color_ocr else ""
         embedding = emb_map.get(str(path))
 
-        # Color path: OCR card, or model says color (AI can still rescue failed OCR).
-        try_color = color_ocr is not None or kind == "color"
-        if try_color:
-            (
-                color_code,
-                light_source,
-                color_suffix,
-                color_source,
-                color_reason,
-            ) = _resolve_color_identity(path, color_ocr, color_master, ai_cfg)
-            if color_suffix:
-                final_kind = "color"
-                suffix = color_suffix
-                source = color_source
-                reason = ""
-            elif kind == "color" or color_ocr is not None:
-                final_kind = "color"
-                source = "model_color_no_ocr" if color_ocr is None else color_source
-                reason = color_reason or "模型判斷為對色相，但讀唔到色號/色名"
+        # mode=always: let AI look at every photo first (color + angle).
+        if ai_cfg.usable and ai_cfg.mode == "always":
+            master_names = color_master.unique_names() if color_master else []
+            hint = " ".join(
+                x
+                for x in (
+                    f"model_kind={kind}",
+                    f"ocr_code={color_code}" if color_code else "",
+                    f"ocr_name={color_ocr.color_name}" if color_ocr and color_ocr.color_name else "",
+                )
+                if x
+            )
+            ai = classify_photo_with_ai(path, ai_cfg, master_names=master_names, hint_text=hint)
+            if ai is not None:
+                (
+                    ai_kind,
+                    ai_code,
+                    ai_light,
+                    ai_suffix,
+                    ai_source,
+                    ai_reason,
+                ) = _apply_ai_photo_result(ai, color_master)
+                if ai_suffix:
+                    final_kind = ai_kind or final_kind
+                    color_code = ai_code or color_code
+                    light_source = ai_light or light_source
+                    suffix = ai_suffix
+                    source = ai_source
+                    reason = ""
+                elif ai_kind == "color":
+                    final_kind = "color"
+                    reason = ai_reason
+
+        # Color / angle fallback. In always mode we already asked AI once above —
+        # keep local OCR + models here to avoid a second paid API call.
+        local_ai = (
+            AIColorConfig(enabled=False, mode="off", source=ai_cfg.source)
+            if (ai_cfg.usable and ai_cfg.mode == "always")
+            else ai_cfg
+        )
+
+        if not suffix:
+            try_color = color_ocr is not None or kind == "color" or final_kind == "color"
+            if try_color:
+                (
+                    color_code,
+                    light_source,
+                    color_suffix,
+                    color_source,
+                    color_reason,
+                ) = _resolve_color_identity(path, color_ocr, color_master, local_ai)
+                if color_suffix:
+                    final_kind = "color"
+                    suffix = color_suffix
+                    source = color_source
+                    reason = ""
+                elif kind == "color" or color_ocr is not None or final_kind == "color":
+                    final_kind = "color"
+                    source = "model_color_no_ocr" if color_ocr is None else color_source
+                    reason = color_reason or "模型判斷為對色相，但讀唔到色號/色名"
 
         if not suffix and final_kind != "color":
             final_kind = "angle"
-            suffix, source = _resolve_angle_suffix(path, embedding, angle_clf, legacy)
+            suffix, source = _resolve_angle_suffix(
+                path,
+                embedding,
+                angle_clf,
+                legacy,
+                ai_cfg=local_ai,
+                color_master=color_master,
+            )
 
         proposed = ""
         action = "review"
@@ -333,6 +448,7 @@ def predict_work_folder(
         "prefix": prefix,
         "tesseract": tesseract_status_message(),
         "ai_color": ai_status_message(ai_cfg),
+        "ai_mode": ai_cfg.mode if ai_cfg.usable else "off",
         "model": str(kind_path) if kind_path.exists() else None,
         "angle_model": str(angle_path) if angle_path.exists() else None,
         "total_images": len(images),
