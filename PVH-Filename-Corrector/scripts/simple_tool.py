@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing
 import os
 import sys
 from pathlib import Path
@@ -14,9 +15,17 @@ from pvh_filename.simple_learn import learn_from_folder
 from pvh_filename.simple_work import predict_work_folder
 
 
-def configure_offline_models() -> None:
+def configure_frozen_runtime() -> None:
+    """Avoid PyInstaller + joblib/loky worker re-entry crashes on Windows."""
     if not is_frozen():
         return
+    os.environ.setdefault("JOBLIB_MULTIPROCESSING", "0")
+    os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    os.environ.setdefault("MKL_NUM_THREADS", "1")
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
     hf_home = portable_root() / "models" / "huggingface"
     if hf_home.exists():
         os.environ["HF_HOME"] = str(hf_home)
@@ -46,7 +55,7 @@ def resolve_target(folder: Path | None) -> Path:
 
 
 def main() -> int:
-    configure_offline_models()
+    configure_frozen_runtime()
     parser = argparse.ArgumentParser(description="PVH 簡化改名工具：工作模式 / 學習模式")
     parser.add_argument("mode", choices=["work", "learn"], help="work=自動改名, learn=從正確檔名學習")
     parser.add_argument("folder", nargs="?", type=Path, default=None)
@@ -65,15 +74,20 @@ def main() -> int:
     print(f"模型目錄: {args.model}")
     print()
 
-    if args.mode == "work":
-        summary = predict_work_folder(
-            folder,
-            args.model,
-            apply=not args.dry_run,
-            write_report=True,
-        )
-    else:
-        summary = learn_from_folder(folder, args.model)
+    try:
+        if args.mode == "work":
+            summary = predict_work_folder(
+                folder,
+                args.model,
+                apply=not args.dry_run,
+                write_report=True,
+            )
+        else:
+            summary = learn_from_folder(folder, args.model)
+    except Exception as exc:
+        print(f"執行失敗: {exc}")
+        pause_if_windows()
+        return 1
 
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     pause_if_windows()
@@ -81,4 +95,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     raise SystemExit(main())
