@@ -199,9 +199,11 @@ def write_readme(portable: Path, exe_name: str, has_clip: bool) -> None:
   - {clip_note}
   - 對色 OCR 需要 Tesseract：C:\\Program Files\\Tesseract-OCR
   - 色號表喺 reference\\ 資料夾
-  - （可選）AI 色名預設用 Google Gemini：複製／編輯 AI設定.txt
-    去 https://aistudio.google.com/apikey 拎免費 key，填 api_key 並 enabled=1
-    mode=fallback 較省額度；需要上網
+  - （可選）AI 睇圖改名（Gemini 地區唔得就用 Qwen-VL）：
+    編輯 AI設定.txt，填阿里雲 DASHSCOPE API key，enabled=1
+    base_url=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    model=qwen-vl-plus；mode=always 會睇對色 + 角度相
+    或本機 Ollama（llava）完全離線
 
 手動：
   app\\{exe_name} work "待改名圖片" --model models\\suffix_classifier

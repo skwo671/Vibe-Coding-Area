@@ -1,13 +1,16 @@
-"""Optional AI vision helper for Archroma color-card naming.
+"""Optional AI vision helper for photo renaming (color + angle).
 
-Default provider: Google Gemini (OpenAI-compatible endpoint).
+Recommended providers for regions where Gemini is blocked:
+  - Alibaba DashScope Qwen-VL (HK/CN/Singapore friendly)
+  - OpenRouter vision models
+  - Local Ollama (llava)
 
 Enabled via AI設定.txt or env:
   PVH_AI_ENABLED=1
-  PVH_AI_API_KEY=...          (or GEMINI_API_KEY / GOOGLE_API_KEY)
-  PVH_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-  PVH_AI_MODEL=gemini-2.0-flash
-  PVH_AI_MODE=fallback|always
+  PVH_AI_API_KEY=...   (or DASHSCOPE_API_KEY / OPENROUTER_API_KEY)
+  PVH_AI_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  PVH_AI_MODEL=qwen-vl-plus
+  PVH_AI_MODE=always|fallback
 """
 
 from __future__ import annotations
@@ -29,8 +32,9 @@ from pvh_filename.simple_ocr import ARCHROMA_CODE_RE, CWF_LABEL_RE
 
 CONFIG_NAMES = ("AI設定.txt", "ai_config.txt", "AI_CONFIG.txt")
 
-DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
-DEFAULT_MODEL = "gemini-2.0-flash"
+# Default: Qwen-VL international (works when Gemini region is blocked).
+DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+DEFAULT_MODEL = "qwen-vl-plus"
 
 
 @dataclass(frozen=True)
@@ -60,14 +64,28 @@ class AIColorConfig:
         model = (self.model or "").lower()
         return "generativelanguage.googleapis.com" in host or model.startswith("gemini")
 
+    def is_qwen(self) -> bool:
+        host = (self.base_url or "").lower()
+        model = (self.model or "").lower()
+        return (
+            "dashscope" in host
+            or "maas.aliyuncs.com" in host
+            or model.startswith("qwen")
+        )
+
+    def is_openrouter(self) -> bool:
+        return "openrouter.ai" in (self.base_url or "").lower()
+
     def is_deepseek(self) -> bool:
         host = (self.base_url or "").lower()
         model = (self.model or "").lower()
-        return "api.deepseek.com" in host or model.startswith("deepseek")
+        return "api.deepseek.com" in host or (
+            model.startswith("deepseek") and "openrouter" not in host
+        )
 
     def supports_vision(self) -> bool:
         """DeepSeek official API is text-only (no image_url)."""
-        if self.is_deepseek():
+        if self.is_deepseek() and not self.is_openrouter():
             return False
         return True
 
@@ -169,11 +187,14 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
 
     api_key = (
         os.environ.get("PVH_AI_API_KEY")
+        or os.environ.get("DASHSCOPE_API_KEY")
+        or os.environ.get("OPENROUTER_API_KEY")
         or os.environ.get("GEMINI_API_KEY")
         or os.environ.get("GOOGLE_API_KEY")
         or os.environ.get("DEEPSEEK_API_KEY")
         or os.environ.get("OPENAI_API_KEY")
         or file_data.get("api_key")
+        or file_data.get("dashscope_api_key")
         or file_data.get("gemini_api_key")
         or file_data.get("deepseek_api_key")
         or file_data.get("openai_api_key")
@@ -188,11 +209,10 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
         os.environ.get("PVH_AI_MODEL") or file_data.get("model") or DEFAULT_MODEL
     ).strip()
 
-    # Gemini OpenAI-compat is happiest without forced response_format by default.
-    default_json = "0" if (
-        "generativelanguage.googleapis.com" in base_url.lower()
-        or model.lower().startswith("gemini")
-    ) else "1"
+    # Force JSON mode off for most vision providers by default.
+    default_json = "0"
+    if "api.openai.com" in base_url.lower():
+        default_json = "1"
     json_mode_raw = os.environ.get("PVH_AI_JSON_MODE")
     if json_mode_raw is None:
         json_mode_raw = file_data.get("json_mode", default_json)
@@ -224,15 +244,26 @@ def load_ai_config(folder: Path | None = None) -> AIColorConfig:
 def ai_status_message(cfg: AIColorConfig | None = None) -> str:
     cfg = cfg or load_ai_config()
     if not cfg.usable:
-        return "AI 色名: 未啟用（可設 AI設定.txt + Gemini API key）"
+        return "AI 改名: 未啟用（建議用通義千問 Qwen-VL／OpenRouter／本機 Ollama）"
     where = f" / {Path(cfg.source).name}" if cfg.source else ""
     if cfg.is_deepseek() and not cfg.supports_vision():
         return (
-            "AI 色名: DeepSeek 已設定但官方 API 唔支援睇相"
-            "（對色/角度請改用 Gemini）"
+            "AI 改名: DeepSeek 已設定但官方 API 唔支援睇相"
+            "（請改用 Qwen-VL 或 OpenRouter）"
             f"{where}"
         )
-    provider = "Gemini" if cfg.is_gemini() else "DeepSeek" if cfg.is_deepseek() else "AI"
+    if cfg.is_qwen():
+        provider = "Qwen-VL"
+    elif cfg.is_gemini():
+        provider = "Gemini"
+    elif cfg.is_openrouter():
+        provider = "OpenRouter"
+    elif cfg.is_deepseek():
+        provider = "DeepSeek"
+    elif cfg.is_local():
+        provider = "Ollama"
+    else:
+        provider = "AI"
     return f"AI 改名: 已啟用 {provider} ({cfg.mode}, {cfg.model}{where})"
 
 
@@ -445,8 +476,9 @@ def classify_photo_with_ai(
         return AIPhotoResult(
             note=(
                 "目前供應商唔支援睇相（例如 DeepSeek 官方 API）。"
-                "請改用 Google Gemini：base_url="
-                "https://generativelanguage.googleapis.com/v1beta/openai"
+                "請改用通義千問 Qwen-VL："
+                "base_url=https://dashscope-intl.aliyuncs.com/compatible-mode/v1 "
+                "model=qwen-vl-plus"
             )
         )
     names = [n for n in (master_names or []) if n][:50]
@@ -524,7 +556,7 @@ def read_color_card_with_ai(
         return AIColorResult(
             note=(
                 "目前供應商唔支援睇相（例如 DeepSeek 官方 API）。"
-                "請改用 Google Gemini。"
+                "請改用通義千問 Qwen-VL 或 OpenRouter。"
             )
         )
     names = [n for n in (master_names or []) if n][:60]

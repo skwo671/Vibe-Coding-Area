@@ -1,25 +1,44 @@
 # AI 睇圖改名（對色相 + 角度相）
 # 複製為 AI設定.txt，填 api_key，enabled=1
 #
-# ★ 需要支援「睇相」的 API：
-#   OK：Google Gemini / OpenRouter vision / 本機 Ollama(llava)
-#   NG：DeepSeek 官方 API（只得文字，唔支援 image）
+# Gemini 喺你地區用唔到？用下面方案：
+#   1) 通義千問 Qwen-VL（阿里雲，香港／新加坡可用）← 建議
+#   2) OpenRouter（有免費 vision 路由）
+#   3) 本機 Ollama（完全免費，唔使雲端）
+# DeepSeek 官方 API 只得文字，睇唔到相。
 
-# ========== 推薦：Google Gemini（免費額度，可睇相）==========
+# ========== 方案 1：通義千問 Qwen-VL（建議）==========
 enabled=0
 mode=always
 json_mode=0
 api_key=
-base_url=https://generativelanguage.googleapis.com/v1beta/openai
-model=gemini-2.0-flash
+base_url=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+model=qwen-vl-plus
 
-# 拎 key：https://aistudio.google.com/apikey
+# 拎 key：https://www.alibabacloud.com/help/zh/model-studio/get-api-key
+#   或登入阿里雲百煉／Model Studio 建立 API Key
+# 中國內地端點改用：
+#   base_url=https://dashscope.aliyuncs.com/compatible-mode/v1
+# 可選模型：qwen-vl-plus / qwen-vl-max / qwen3-vl-plus / qwen3-vl-flash
+# 環境變數：DASHSCOPE_API_KEY=sk-...
+
+# ========== 方案 2：OpenRouter（可選免費路由）==========
+# enabled=1
+# mode=always
+# json_mode=0
+# api_key=sk-or-v1-...
+# base_url=https://openrouter.ai/api/v1
+# model=openrouter/free
+# 拎 key：https://openrouter.ai/
+
+# ========== 方案 3：本機 Ollama（完全免費）==========
+# 先裝 https://ollama.com/ ，然後：ollama pull llava
+# enabled=1
+# mode=always
+# json_mode=0
+# api_key=ollama
+# base_url=http://127.0.0.1:11434/v1
+# model=llava
+
 # mode=always → 每張相都俾 AI 睇（對色 + AS/FRONT/SIDE/CORNER）
 # mode=fallback → OCR／本地模型唔穩先問 AI
-
-# ========== DeepSeek（官方 API 而家唔支援睇相）==========
-# 唔好用嚟做對色/角度睇圖改名；會報錯。
-# enabled=1
-# api_key=sk-...
-# base_url=https://api.deepseek.com
-# model=deepseek-v4-flash

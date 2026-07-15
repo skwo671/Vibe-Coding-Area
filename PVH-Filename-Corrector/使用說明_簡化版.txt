@@ -17,15 +17,18 @@ PVH 簡化改名工具
   - 色名優先用 reference 色號表；OCR 讀到部份文字亦會模糊對照
 
 可選：AI 睇圖改名（對色相 + 角度相）
-  - 要用支援睇相嘅模型：Google Gemini（建議，免費）
-  - DeepSeek 官方 API 而家只得文字，睇唔到對色/角度相
-  - 複製 AI設定.example.txt → AI設定.txt
-  - Gemini：https://aistudio.google.com/apikey → 填 api_key，enabled=1
-      base_url=https://generativelanguage.googleapis.com/v1beta/openai
-      model=gemini-2.0-flash
-  - mode=always：每張都俾 AI 睇（對色 + AS/FRONT/SIDE/CORNER）
-  - mode=fallback：OCR／模型唔穩先問 AI
-  - 環境變數：GEMINI_API_KEY
+  - Gemini 地區用唔到？改用：
+      1) 通義千問 Qwen-VL（建議，香港／新加坡／內地可用）
+         拎 key：阿里雲百煉／Model Studio
+         base_url=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+         model=qwen-vl-plus
+         （內地改：https://dashscope.aliyuncs.com/compatible-mode/v1）
+      2) OpenRouter：model=openrouter/free
+      3) 本機 Ollama：model=llava（完全免費）
+  - DeepSeek 官方 API 只得文字，睇唔到相
+  - 複製 AI設定.example.txt → AI設定.txt，填 api_key，enabled=1
+  - mode=always：每張都睇（對色 + AS/FRONT/SIDE/CORNER）
+  - 環境變數：DASHSCOPE_API_KEY
   - 命令列：--ai / --no-ai / --ai-mode always|fallback|off
 
 兩個模式：
