@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from pvh_filename.runtime import default_model_dir, default_target_folder, is_frozen, portable_root
+from pvh_filename.simple_ai_color import AIColorConfig, load_ai_config
 from pvh_filename.simple_learn import learn_from_folder
 from pvh_filename.simple_work import predict_work_folder
 
@@ -54,6 +55,42 @@ def resolve_target(folder: Path | None) -> Path:
     return default_target_folder()
 
 
+def resolve_ai_config(folder: Path, args: argparse.Namespace) -> AIColorConfig:
+    cfg = load_ai_config(folder)
+    if args.no_ai:
+        return AIColorConfig(enabled=False, mode="off", source=cfg.source)
+    if args.ai:
+        api_key = cfg.api_key or os.environ.get("OPENAI_API_KEY", "")
+        mode = args.ai_mode or (cfg.mode if cfg.mode != "off" else "fallback")
+        return AIColorConfig(
+            enabled=bool(api_key),
+            mode=mode if api_key else "off",
+            api_key=api_key,
+            base_url=cfg.base_url,
+            model=args.ai_model or cfg.model,
+            source=cfg.source or "cli --ai",
+        )
+    if args.ai_mode:
+        return AIColorConfig(
+            enabled=cfg.enabled and args.ai_mode != "off",
+            mode=args.ai_mode,
+            api_key=cfg.api_key,
+            base_url=cfg.base_url,
+            model=args.ai_model or cfg.model,
+            source=cfg.source,
+        )
+    if args.ai_model and cfg.usable:
+        return AIColorConfig(
+            enabled=cfg.enabled,
+            mode=cfg.mode,
+            api_key=cfg.api_key,
+            base_url=cfg.base_url,
+            model=args.ai_model,
+            source=cfg.source,
+        )
+    return cfg
+
+
 def main() -> int:
     configure_frozen_runtime()
     parser = argparse.ArgumentParser(description="PVH 簡化改名工具：工作模式 / 學習模式")
@@ -61,6 +98,15 @@ def main() -> int:
     parser.add_argument("folder", nargs="?", type=Path, default=None)
     parser.add_argument("--model", type=Path, default=default_model_dir())
     parser.add_argument("--dry-run", action="store_true", help="工作模式只報告唔改名")
+    parser.add_argument("--ai", action="store_true", help="啟用 AI 協助讀色名（需要 API key）")
+    parser.add_argument("--no-ai", action="store_true", help="強制關閉 AI")
+    parser.add_argument(
+        "--ai-mode",
+        choices=["fallback", "always", "off"],
+        default=None,
+        help="AI 模式：fallback=OCR失敗才問；always=對色相都問",
+    )
+    parser.add_argument("--ai-model", default=None, help="AI 模型名，例如 gpt-4o-mini")
     args = parser.parse_args()
 
     folder = resolve_target(args.folder)
@@ -81,6 +127,7 @@ def main() -> int:
                 args.model,
                 apply=not args.dry_run,
                 write_report=True,
+                ai_config=resolve_ai_config(folder, args),
             )
         else:
             summary = learn_from_folder(folder, args.model)

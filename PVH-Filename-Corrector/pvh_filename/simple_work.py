@@ -6,8 +6,15 @@ from pathlib import Path
 
 import numpy as np
 
-from pvh_filename.color_master import resolve_color_master
+from pvh_filename.color_master import ColorMasterLookup, resolve_color_master
 from pvh_filename.model import ClipEmbedder, HierarchicalClassifier, default_model_path
+from pvh_filename.simple_ai_color import (
+    AIColorConfig,
+    ai_status_message,
+    load_ai_config,
+    read_color_card_with_ai,
+    should_ask_ai,
+)
 from pvh_filename.simple_angle_heuristics import looks_like_corner, looks_like_side_view
 from pvh_filename.simple_as import has_two_similar_products
 from pvh_filename.simple_labels import (
@@ -23,7 +30,97 @@ from pvh_filename.simple_model import (
     default_angle_model_path,
     default_simple_model_path,
 )
-from pvh_filename.simple_ocr import detect_color_card, tesseract_status_message
+from pvh_filename.simple_ocr import ColorCardOCR, detect_color_card, tesseract_status_message
+
+
+def _pick_color_name(
+    color_code: str,
+    raw_name: str,
+    color_master: ColorMasterLookup | None,
+) -> tuple[str, str]:
+    """Return (display_name, source_tag). Prefer master lookup by code."""
+    if color_master and color_code:
+        master_name = color_master.lookup_name(color_code) or ""
+        if master_name:
+            return master_name, "color_master"
+    if color_master and raw_name:
+        fuzzy = color_master.fuzzy_lookup_name(raw_name) or ""
+        if fuzzy:
+            return fuzzy, "fuzzy_master"
+    if raw_name:
+        return normalize_token(raw_name), "raw_name"
+    return "", ""
+
+
+def _resolve_color_identity(
+    path: Path,
+    color_ocr: ColorCardOCR | None,
+    color_master: ColorMasterLookup | None,
+    ai_cfg: AIColorConfig,
+) -> tuple[str, str, str, str, str]:
+    """
+    Build color suffix parts.
+
+    Returns: color_code, light_source, suffix, source, reason
+    """
+    color_code = color_ocr.color_code if color_ocr else ""
+    light = color_ocr.light_source if color_ocr else ""
+    raw_name = color_ocr.color_name if color_ocr else ""
+    name, name_src = _pick_color_name(color_code, raw_name, color_master)
+    used_ai = False
+    ai_note = ""
+
+    ask = should_ask_ai(
+        ai_cfg,
+        has_ocr=color_ocr is not None,
+        has_color_name=bool(name),
+        has_color_code=bool(color_code),
+    )
+
+    if ask and ai_cfg.usable:
+        master_names = color_master.unique_names() if color_master else []
+        hint = " ".join(x for x in (color_code, raw_name, name) if x)
+        ai = read_color_card_with_ai(
+            path,
+            ai_cfg,
+            hint_text=hint,
+            master_names=master_names,
+        )
+        if ai is not None:
+            ai_note = ai.note
+            if ai.color_code or ai.color_name or ai.has_cwf_label:
+                used_ai = True
+                if ai.color_code:
+                    color_code = ai.color_code
+                if ai.color_name:
+                    raw_name = ai.color_name
+                if ai.has_cwf_label:
+                    light = "CWF"
+                elif not light:
+                    light = ai.light_source
+                name, name_src = _pick_color_name(color_code, raw_name or name, color_master)
+
+    if not color_code and not name:
+        return "", "", "", "ai_failed" if used_ai else "no_color", ai_note or "讀唔到色號/色名"
+
+    if not light:
+        light = "D65"
+
+    if name:
+        suffix = f"{light}_{name}"
+        bits = ["ocr"]
+        if used_ai:
+            bits.append("ai")
+        bits.append(name_src or "name")
+        source = "+".join(bits) + f"/{light}"
+    else:
+        suffix = f"{light}_{color_code}"
+        bits = ["ocr"]
+        if used_ai:
+            bits.append("ai")
+        bits.append("color_code")
+        source = "+".join(bits) + f"/{light}"
+    return color_code, light, suffix, source, ""
 
 
 def _unique_name(folder: Path, filename: str, taken: set[str]) -> str:
@@ -82,11 +179,13 @@ def predict_work_folder(
     *,
     apply: bool = True,
     write_report: bool = True,
+    ai_config: AIColorConfig | None = None,
 ) -> dict:
     folder = folder.resolve()
     images = iter_image_paths(folder)
     prefix = find_tds_prefix(folder) or folder.name
     color_master = resolve_color_master(folder)
+    ai_cfg = ai_config if ai_config is not None else load_ai_config(folder)
 
     kind_path = default_simple_model_path(model_dir)
     angle_path = default_angle_model_path(model_dir)
@@ -128,28 +227,30 @@ def predict_work_folder(
         source = "model"
         reason = ""
         final_kind = kind
+        light_source = color_ocr.light_source if color_ocr else ""
         embedding = emb_map.get(str(path))
 
-        if color_ocr:
-            final_kind = "color"
-            light = color_ocr.light_source  # CWF if label present, else D65
-            color_name = ""
-            if color_master:
-                color_name = color_master.lookup_name(color_code) or ""
-            if not color_name and color_ocr.color_name:
-                color_name = color_ocr.color_name
-            if color_name:
-                suffix = f"{light}_{color_name}"
-                source = f"ocr+color_master/{light}" if color_master else f"ocr_name/{light}"
-            else:
-                suffix = f"{light}_{color_code}"
-                source = f"ocr_color_code/{light}"
-            reason = ""
-        elif kind == "color":
-            final_kind = "color"
-            source = "model_color_no_ocr"
-            reason = "模型判斷為對色相，但 OCR 讀唔到色號"
-        else:
+        # Color path: OCR card, or model says color (AI can still rescue failed OCR).
+        try_color = color_ocr is not None or kind == "color"
+        if try_color:
+            (
+                color_code,
+                light_source,
+                color_suffix,
+                color_source,
+                color_reason,
+            ) = _resolve_color_identity(path, color_ocr, color_master, ai_cfg)
+            if color_suffix:
+                final_kind = "color"
+                suffix = color_suffix
+                source = color_source
+                reason = ""
+            elif kind == "color" or color_ocr is not None:
+                final_kind = "color"
+                source = "model_color_no_ocr" if color_ocr is None else color_source
+                reason = color_reason or "模型判斷為對色相，但讀唔到色號/色名"
+
+        if not suffix and final_kind != "color":
             final_kind = "angle"
             suffix, source = _resolve_angle_suffix(path, embedding, angle_clf, legacy)
 
@@ -182,7 +283,7 @@ def predict_work_folder(
                 "folder_prefix": prefix,
                 "predicted_kind": final_kind,
                 "color_code": color_code,
-                "light_source": color_ocr.light_source if color_ocr else "",
+                "light_source": light_source,
                 "suffix": suffix,
                 "suffix_source": source,
                 "proposed_name": proposed,
@@ -231,6 +332,7 @@ def predict_work_folder(
         "folder": str(folder),
         "prefix": prefix,
         "tesseract": tesseract_status_message(),
+        "ai_color": ai_status_message(ai_cfg),
         "model": str(kind_path) if kind_path.exists() else None,
         "angle_model": str(angle_path) if angle_path.exists() else None,
         "total_images": len(images),
@@ -245,6 +347,7 @@ def predict_work_folder(
     print(f"TDS 前綴:   {summary['prefix']}")
     print("角度相:     AS / FRONT / SIDE / CORNER")
     print(summary["tesseract"])
+    print(summary["ai_color"])
     print("=" * 50)
     for row in rows[:8]:
         print(

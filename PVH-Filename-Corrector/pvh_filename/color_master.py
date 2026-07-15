@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import pandas as pd
@@ -97,6 +98,50 @@ class ColorMasterLookup:
         if not key:
             return None
         return self.by_code.get(key)
+
+    def unique_names(self) -> list[str]:
+        return sorted(set(self.by_code.values()))
+
+    def fuzzy_lookup_name(self, raw_name: str, *, min_score: float = 0.78) -> str | None:
+        """Match OCR / AI fragment to an official master color name."""
+        needle = sanitize_color_name(raw_name)
+        if not needle:
+            return None
+        names = self.unique_names()
+        if needle in names:
+            return needle
+
+        needle_tokens = [t for t in needle.split("_") if t]
+        compact_needle = needle.replace("_", "")
+
+        # Unique whole-token matches, e.g. "DESERT SKY" tokens inside DESERT_SKY.
+        token_hits = [
+            name
+            for name in names
+            if needle_tokens and all(tok in name.split("_") for tok in needle_tokens)
+        ]
+        if len(token_hits) == 1:
+            return token_hits[0]
+        if len(token_hits) > 1 and len(needle_tokens) >= 2:
+            # Prefer the shortest official name among multi-token hits.
+            return sorted(token_hits, key=lambda n: (len(n), n))[0]
+
+        best_name = ""
+        best_score = 0.0
+        for name in names:
+            compact = name.replace("_", "")
+            ratio = SequenceMatcher(None, needle, name).ratio()
+            compact_ratio = SequenceMatcher(None, compact_needle, compact).ratio()
+            score = max(ratio, compact_ratio)
+            # Short fragments like "SKY" must not jump to "SKYWAY".
+            if len(compact_needle) < 4:
+                score = min(score, ratio)
+            if score > best_score:
+                best_score = score
+                best_name = name
+        if best_name and best_score >= min_score:
+            return best_name
+        return None
 
     def __len__(self) -> int:
         return len(self.by_code)

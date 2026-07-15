@@ -1,0 +1,21 @@
+# AI 色名協助設定（可選）
+# 複製此檔為 AI設定.txt，填入 api_key 並把 enabled 改成 1
+# 放喺工具根目錄，或「待改名圖片」資料夾內皆可
+
+enabled=0
+mode=fallback
+api_key=
+base_url=https://api.openai.com/v1
+model=gpt-4o-mini
+
+# mode 說明：
+#   fallback = OCR 讀唔到色號/色名時，先叫 AI 讀色卡
+#   always   = 凡判定為對色相都問 AI（較準但較慢/較貴）
+#   off      = 關閉
+#
+# 亦可用環境變數：
+#   PVH_AI_ENABLED=1
+#   PVH_AI_API_KEY=sk-...
+#   PVH_AI_MODE=fallback
+#   PVH_AI_MODEL=gpt-4o-mini
+#   PVH_AI_BASE_URL=https://api.openai.com/v1

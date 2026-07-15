@@ -14,6 +14,15 @@ PVH 簡化改名工具
   - 有色號 + 圖片上有 CWF 標籤 → CWF_色名/色號
   - 有色號但沒有 CWF 標籤 → D65_色名/色號
   - 色號例子：654-920 / 19-1555
+  - 色名優先用 reference 色號表；OCR 讀到部份文字亦會模糊對照
+
+可選：AI 協助改色名
+  - 複製 AI設定.example.txt → AI設定.txt
+  - 填入 api_key，enabled=1
+  - mode=fallback（預設）：OCR 讀唔到／唔齊先叫 AI 讀色卡
+  - mode=always：對色相都問 AI（較慢／較貴）
+  - 支援 OpenAI 相容 API（可用 PVH_AI_BASE_URL 改端點）
+  - 命令列：--ai / --no-ai / --ai-mode fallback|always|off
 
 兩個模式：
   1_工作模式_自動改名.bat
