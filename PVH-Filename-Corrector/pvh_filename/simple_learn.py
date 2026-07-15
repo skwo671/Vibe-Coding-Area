@@ -59,12 +59,45 @@ def collect_labels_from_folder(folder: Path) -> list[dict]:
     return samples
 
 
+KEEP_IN_LEARN_FOLDER = {"請將已改正確檔名嘅圖片放喺呢度.txt"}
+
+
+def cleanup_learn_folder(folder: Path, learned_paths: list[Path]) -> dict:
+    """Delete learned samples (and leftover media) from the learn input folder."""
+    deleted = 0
+    failed = 0
+
+    # First delete all successfully ingested images.
+    for path in learned_paths:
+        try:
+            if path.exists() and path.is_file() and path.parent.resolve() == folder.resolve():
+                path.unlink()
+                deleted += 1
+        except OSError:
+            failed += 1
+
+    # Also clear any remaining files except guide text.
+    for path in folder.iterdir():
+        if not path.is_file():
+            continue
+        if path.name in KEEP_IN_LEARN_FOLDER or path.suffix.lower() == ".txt":
+            continue
+        try:
+            path.unlink()
+            deleted += 1
+        except OSError:
+            failed += 1
+
+    return {"deleted": deleted, "failed": failed}
+
+
 def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True) -> dict:
     """
     Learning mode:
     1. Scan folder for correctly named images.
     2. Save into learn_bank.
     3. Retrain kind model (angle vs color) and angle model (AS/FRONT/SIDE/CORNER).
+    4. Delete files/images from the learning folder after learning.
     """
     folder = folder.resolve()
     model_dir = model_dir.resolve()
@@ -84,8 +117,10 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
         return {"learned": 0, "retrained": False}
 
     new_rows: list[dict] = []
+    source_paths: list[Path] = []
     for sample in collected:
         src = Path(sample["path"])
+        source_paths.append(src)
         stored_name = f"{sample['kind']}__{sample['suffix'].replace(' ', '_')}__{src.stem}{src.suffix}"
         dest = images_dir / stored_name
         if copy_images:
@@ -165,5 +200,12 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
         print(json.dumps(angle_metrics, indent=2, ensure_ascii=False))
     else:
         print("提示: 角度細分需要至少兩種（AS/FRONT/SIDE/CORNER）先可以訓練。")
+
+    # Samples are already copied into learn_bank; clear the user-facing learn folder.
+    cleanup = cleanup_learn_folder(folder, source_paths)
+    result["cleaned_learn_folder"] = cleanup
+    print(f"已清空學習資料夾：刪除 {cleanup['deleted']} 個檔案")
+    if cleanup["failed"]:
+        print(f"警告: 有 {cleanup['failed']} 個檔案刪除失敗")
 
     return result
