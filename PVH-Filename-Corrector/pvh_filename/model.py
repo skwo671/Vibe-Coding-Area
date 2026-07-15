@@ -77,7 +77,8 @@ class ClipEmbedder:
 
 
 def _make_classifier() -> LogisticRegression:
-    return LogisticRegression(max_iter=3000, class_weight="balanced", n_jobs=-1)
+    # n_jobs=1 avoids PyInstaller/joblib worker crashes on Windows .exe
+    return LogisticRegression(max_iter=3000, class_weight="balanced", n_jobs=1)
 
 
 def _fit_encoder_model(

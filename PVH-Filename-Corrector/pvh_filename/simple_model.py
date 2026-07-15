@@ -16,7 +16,7 @@ class SimpleKindClassifier:
 
     def __init__(self) -> None:
         self.encoder = LabelEncoder()
-        self.model = LogisticRegression(max_iter=3000, class_weight="balanced", n_jobs=-1)
+        self.model = LogisticRegression(max_iter=3000, class_weight="balanced", n_jobs=1)
         self.fitted = False
 
     def fit(self, embeddings: np.ndarray, labels: list[str]) -> dict:
