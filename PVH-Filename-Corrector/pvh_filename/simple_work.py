@@ -469,6 +469,7 @@ def predict_work_folder(
                 legacy,
                 ai_cfg=local_ai,
                 color_master=color_master,
+                color_memory=color_memory,
             )
             # If angle AI redirected to a color suffix, mark as color.
             if suffix.startswith(("CWF_", "D65_", "UV_")):
