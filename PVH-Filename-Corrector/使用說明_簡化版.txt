@@ -31,6 +31,15 @@ PVH 簡化改名工具
   - 唔使雲端 API key；Gemini／DeepSeek 地區問題唔影響
   - 命令列：--ai / --no-ai / --ai-mode always|fallback|off
 
+學習模式會學：
+  - 角度相 vs 對色相
+  - AS / FRONT / SIDE / CORNER
+  - 對色相名記憶（你改正確嘅色名／色號）
+      例子：xxx_D65_DESERT_SKY.jpg / xxx_CWF_WHITE.jpg
+      工作模式會用色號對照 + 相似色卡影像幫手改名
+  - 學習模式唔使開 Ollama
+
+
 兩個模式：
   1_工作模式_自動改名.bat
       把 TDS + 未改名圖片放入「待改名圖片」後執行

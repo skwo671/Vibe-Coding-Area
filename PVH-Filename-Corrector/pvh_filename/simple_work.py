@@ -20,6 +20,7 @@ from pvh_filename.simple_ai_color import (
 )
 from pvh_filename.simple_angle_heuristics import looks_like_corner, looks_like_side_view
 from pvh_filename.simple_as import has_two_similar_products
+from pvh_filename.simple_color_memory import ColorNameMemory, default_color_memory_path
 from pvh_filename.simple_labels import (
     ANGLE_ALIAS,
     ANGLE_LABELS,
@@ -40,16 +41,28 @@ def _pick_color_name(
     color_code: str,
     raw_name: str,
     color_master: ColorMasterLookup | None,
+    color_memory: ColorNameMemory | None = None,
 ) -> tuple[str, str]:
-    """Return (display_name, source_tag). Prefer master lookup by code."""
+    """Return (display_name, source_tag). Prefer master, then learned memory."""
     if color_master and color_code:
         master_name = color_master.lookup_name(color_code) or ""
         if master_name:
             return master_name, "color_master"
+    if color_memory and color_code:
+        hit = color_memory.lookup_by_code(color_code)
+        if hit and hit.name:
+            return hit.name, "learned_code"
     if color_master and raw_name:
         fuzzy = color_master.fuzzy_lookup_name(raw_name) or ""
         if fuzzy:
             return fuzzy, "fuzzy_master"
+    if color_memory and raw_name:
+        # Exact / near match against learned names.
+        needle = normalize_token(raw_name)
+        for entry in color_memory.entries:
+            learned = normalize_token(str(entry.get("name") or ""))
+            if learned and learned == needle:
+                return learned, "learned_name"
     if raw_name:
         return normalize_token(raw_name), "raw_name"
     return "", ""
@@ -60,6 +73,9 @@ def _resolve_color_identity(
     color_ocr: ColorCardOCR | None,
     color_master: ColorMasterLookup | None,
     ai_cfg: AIColorConfig,
+    *,
+    color_memory: ColorNameMemory | None = None,
+    embedding: np.ndarray | None = None,
 ) -> tuple[str, str, str, str, str]:
     """
     Build color suffix parts.
@@ -69,9 +85,42 @@ def _resolve_color_identity(
     color_code = color_ocr.color_code if color_ocr else ""
     light = color_ocr.light_source if color_ocr else ""
     raw_name = color_ocr.color_name if color_ocr else ""
-    name, name_src = _pick_color_name(color_code, raw_name, color_master)
+    name, name_src = _pick_color_name(color_code, raw_name, color_master, color_memory)
     used_ai = False
     ai_note = ""
+    used_memory = name_src.startswith("learned")
+
+    # Visual memory before AI when OCR is incomplete.
+    if color_memory and embedding is not None and (not name or not color_code):
+        hit = color_memory.lookup_by_embedding(embedding)
+        if hit is not None:
+            used_memory = True
+            if hit.code and not color_code:
+                color_code = hit.code
+            if hit.name and not name:
+                name = hit.name
+                name_src = "learned_visual"
+            if hit.light and not light:
+                light = hit.light
+            # If OCR missed everything but visual hit is strong, take full suffix.
+            if not name and not color_code and hit.suffix:
+                light = hit.light or "D65"
+                if hit.name:
+                    return (
+                        hit.code,
+                        light,
+                        f"{light}_{hit.name}",
+                        f"learned_visual/{light}",
+                        "",
+                    )
+                if hit.code:
+                    return (
+                        hit.code,
+                        light,
+                        f"{light}_{hit.code}",
+                        f"learned_visual/{light}",
+                        "",
+                    )
 
     ask = should_ask_ai(
         ai_cfg,
@@ -82,6 +131,13 @@ def _resolve_color_identity(
 
     if ask and ai_cfg.usable:
         master_names = color_master.unique_names() if color_master else []
+        if color_memory:
+            master_names = list(
+                dict.fromkeys(
+                    master_names
+                    + [str(e.get("name")) for e in color_memory.entries if e.get("name")]
+                )
+            )
         hint = " ".join(x for x in (color_code, raw_name, name) if x)
         ai = read_color_card_with_ai(
             path,
@@ -101,7 +157,19 @@ def _resolve_color_identity(
                     light = "CWF"
                 elif not light:
                     light = ai.light_source
-                name, name_src = _pick_color_name(color_code, raw_name or name, color_master)
+                name, name_src = _pick_color_name(
+                    color_code, raw_name or name, color_master, color_memory
+                )
+
+    # After AI/OCR, fill name from learned code map if still missing.
+    if color_memory and color_code and not name:
+        hit = color_memory.lookup_by_code(color_code)
+        if hit and hit.name:
+            name = hit.name
+            name_src = "learned_code"
+            used_memory = True
+            if hit.light and not light:
+                light = hit.light
 
     if not color_code and not name:
         return "", "", "", "ai_failed" if used_ai else "no_color", ai_note or "讀唔到色號/色名"
@@ -114,8 +182,11 @@ def _resolve_color_identity(
         bits = ["ocr"]
         if used_ai:
             bits.append("ai")
-        bits.append(name_src or "name")
-        source = "+".join(bits) + f"/{light}"
+        if used_memory or name_src.startswith("learned"):
+            bits.append(name_src if name_src.startswith("learned") else "learned")
+        else:
+            bits.append(name_src or "name")
+        source = "+".join(dict.fromkeys(bits)) + f"/{light}"
     else:
         suffix = f"{light}_{color_code}"
         bits = ["ocr"]
@@ -149,6 +220,7 @@ def _map_legacy_angle(suffix: str) -> str:
 def _apply_ai_photo_result(
     ai: AIPhotoResult,
     color_master: ColorMasterLookup | None,
+    color_memory: ColorNameMemory | None = None,
 ) -> tuple[str, str, str, str, str, str]:
     """
     Convert AI photo result into rename fields.
@@ -157,7 +229,9 @@ def _apply_ai_photo_result(
     """
     if ai.usable_color:
         light = "CWF" if ai.has_cwf_label else (ai.light_source or "D65")
-        name, name_src = _pick_color_name(ai.color_code, ai.color_name, color_master)
+        name, name_src = _pick_color_name(
+            ai.color_code, ai.color_name, color_master, color_memory
+        )
         if name:
             return (
                 "color",
@@ -191,6 +265,7 @@ def _resolve_angle_suffix(
     legacy: HierarchicalClassifier | None,
     ai_cfg: AIColorConfig | None = None,
     color_master: ColorMasterLookup | None = None,
+    color_memory: ColorNameMemory | None = None,
 ) -> tuple[str, str]:
     """Pick AS / FRONT / SIDE / CORNER for an angle shot."""
     if has_two_similar_products(path):
@@ -222,6 +297,13 @@ def _resolve_angle_suffix(
 
     if ai_cfg and should_ask_ai_angle(ai_cfg, local_suffix=local_suffix, local_source=local_source):
         master_names = color_master.unique_names() if color_master else []
+        if color_memory:
+            master_names = list(
+                dict.fromkeys(
+                    master_names
+                    + [str(e.get("name")) for e in color_memory.entries if e.get("name")]
+                )
+            )
         ai = classify_photo_with_ai(
             path,
             ai_cfg,
@@ -233,7 +315,9 @@ def _resolve_angle_suffix(
                 return ai.angle, f"ai_angle/{ai.angle}"
             if ai.usable_color:
                 # Rare: local thought angle, AI says color — leave angle fallback but mark.
-                kind, code, light, suffix, source, _reason = _apply_ai_photo_result(ai, color_master)
+                kind, code, light, suffix, source, _reason = _apply_ai_photo_result(
+                    ai, color_master, color_memory
+                )
                 if suffix and kind == "color":
                     return suffix, source
 
@@ -253,6 +337,7 @@ def predict_work_folder(
     prefix = find_tds_prefix(folder) or folder.name
     color_master = resolve_color_master(folder)
     ai_cfg = ai_config if ai_config is not None else load_ai_config(folder)
+    color_memory = ColorNameMemory.load(default_color_memory_path(model_dir))
 
     kind_path = default_simple_model_path(model_dir)
     angle_path = default_angle_model_path(model_dir)
@@ -271,7 +356,10 @@ def predict_work_folder(
     kind_confs = [0.0] * len(images)
     emb_map: dict[str, np.ndarray] = {}
 
-    if images and (kind_clf or angle_clf or legacy):
+    need_embeddings = bool(
+        images and (kind_clf or angle_clf or legacy or (color_memory and color_memory.embeddings is not None))
+    )
+    if need_embeddings:
         embedder = ClipEmbedder()
         embeddings, valid_paths = embedder.encode_paths([str(p) for p in images])
         emb_map = {p: embeddings[i] for i, p in enumerate(valid_paths)}
@@ -300,6 +388,13 @@ def predict_work_folder(
         # mode=always: let AI look at every photo first (color + angle).
         if ai_cfg.usable and ai_cfg.mode == "always":
             master_names = color_master.unique_names() if color_master else []
+            if color_memory:
+                master_names = list(
+                    dict.fromkeys(
+                        master_names
+                        + [str(e.get("name")) for e in color_memory.entries if e.get("name")]
+                    )
+                )
             hint = " ".join(
                 x
                 for x in (
@@ -318,7 +413,7 @@ def predict_work_folder(
                     ai_suffix,
                     ai_source,
                     ai_reason,
-                ) = _apply_ai_photo_result(ai, color_master)
+                ) = _apply_ai_photo_result(ai, color_master, color_memory)
                 if ai_suffix:
                     final_kind = ai_kind or final_kind
                     color_code = ai_code or color_code
@@ -347,7 +442,14 @@ def predict_work_folder(
                     color_suffix,
                     color_source,
                     color_reason,
-                ) = _resolve_color_identity(path, color_ocr, color_master, local_ai)
+                ) = _resolve_color_identity(
+                    path,
+                    color_ocr,
+                    color_master,
+                    local_ai,
+                    color_memory=color_memory,
+                    embedding=embedding,
+                )
                 if color_suffix:
                     final_kind = "color"
                     suffix = color_suffix
@@ -368,6 +470,9 @@ def predict_work_folder(
                 ai_cfg=local_ai,
                 color_master=color_master,
             )
+            # If angle AI redirected to a color suffix, mark as color.
+            if suffix.startswith(("CWF_", "D65_", "UV_")):
+                final_kind = "color"
 
         proposed = ""
         action = "review"
@@ -451,6 +556,11 @@ def predict_work_folder(
         "ai_mode": ai_cfg.mode if ai_cfg.usable else "off",
         "model": str(kind_path) if kind_path.exists() else None,
         "angle_model": str(angle_path) if angle_path.exists() else None,
+        "color_memory": (
+            f"{len(color_memory)} samples / {len(color_memory.by_code)} codes"
+            if color_memory
+            else None
+        ),
         "total_images": len(images),
         "renamed": renamed,
         "report": str(report_path) if write_report else None,
@@ -464,6 +574,10 @@ def predict_work_folder(
     print("角度相:     AS / FRONT / SIDE / CORNER")
     print(summary["tesseract"])
     print(summary["ai_color"])
+    if color_memory:
+        print(
+            f"色名記憶:   {len(color_memory)} 張 / {len(color_memory.by_code)} 個色號"
+        )
     print("=" * 50)
     for row in rows[:8]:
         print(

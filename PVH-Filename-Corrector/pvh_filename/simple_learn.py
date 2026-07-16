@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from pvh_filename.simple_labels import ANGLE_LABELS, iter_image_paths, parse_simple_label
+from pvh_filename.simple_color_memory import rebuild_color_memory
 from pvh_filename.simple_model import (
     default_angle_model_path,
     default_simple_model_path,
@@ -97,7 +98,8 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
     1. Scan folder for correctly named images.
     2. Save into learn_bank.
     3. Retrain kind model (angle vs color) and angle model (AS/FRONT/SIDE/CORNER).
-    4. Delete files/images from the learning folder after learning.
+    4. Rebuild color-name memory from corrected color filenames.
+    5. Delete files/images from the learning folder after learning.
     """
     folder = folder.resolve()
     model_dir = model_dir.resolve()
@@ -114,6 +116,8 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
         print("  xxx_SIDE.jpg")
         print("  xxx_CORNER.jpg")
         print("  xxx_CWF_654-920.jpg")
+        print("  xxx_D65_DESERT_SKY.jpg")
+        print("（對色相正確檔名會用來訓練色名記憶）")
         return {"learned": 0, "retrained": False}
 
     new_rows: list[dict] = []
@@ -154,6 +158,7 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
     angle_rows = [r for r in unique_rows if r["kind"] == "angle" and r["suffix"] in ANGLE_LABELS]
     angle_paths = [r["image_path"] for r in angle_rows]
     angle_labels = [r["suffix"] for r in angle_rows]
+    color_rows = [r for r in unique_rows if r["kind"] == "color"]
 
     kind_counts: dict[str, int] = {}
     for label in kind_labels:
@@ -161,6 +166,10 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
     angle_counts: dict[str, int] = {}
     for label in angle_labels:
         angle_counts[label] = angle_counts.get(label, 0) + 1
+    color_name_counts: dict[str, int] = {}
+    for row in color_rows:
+        key = str(row.get("suffix") or "?")
+        color_name_counts[key] = color_name_counts.get(key, 0) + 1
 
     print("=" * 50)
     print("模式:       學習模式")
@@ -168,6 +177,7 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
     print(f"累計樣本:   {len(paths)} 張")
     print(f"種類分布:   {kind_counts}")
     print(f"角度分布:   {angle_counts}")
+    print(f"對色分布:   {color_name_counts}")
     print("=" * 50)
 
     result: dict = {
@@ -175,8 +185,10 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
         "total_samples": len(paths),
         "kind_counts": kind_counts,
         "angle_counts": angle_counts,
+        "color_name_counts": color_name_counts,
         "retrained_kind": False,
         "retrained_angle": False,
+        "retrained_color_names": False,
     }
 
     if len(set(kind_labels)) >= 2 and len(paths) >= 4:
@@ -200,6 +212,19 @@ def learn_from_folder(folder: Path, model_dir: Path, *, copy_images: bool = True
         print(json.dumps(angle_metrics, indent=2, ensure_ascii=False))
     else:
         print("提示: 角度細分需要至少兩種（AS/FRONT/SIDE/CORNER）先可以訓練。")
+
+    if color_rows:
+        print(f"對色相名記憶：用 {len(color_rows)} 張正確色名樣本重建…")
+        memory = rebuild_color_memory(model_dir, color_rows, run_ocr=True, build_embeddings=True)
+        result["retrained_color_names"] = True
+        result["color_memory_entries"] = len(memory)
+        result["color_memory_codes"] = len(memory.by_code)
+        print(
+            f"對色相名記憶完成：{len(memory)} 張樣本，"
+            f"{len(memory.by_code)} 個色號對照"
+        )
+    else:
+        print("提示: 未有對色相樣本，跳過色名記憶（可放 xxx_D65_DESERT_SKY.jpg 等）。")
 
     # Samples are already copied into learn_bank; clear the user-facing learn folder.
     cleanup = cleanup_learn_folder(folder, source_paths)

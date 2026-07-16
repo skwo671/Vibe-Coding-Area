@@ -78,6 +78,8 @@ def build_executable() -> Path:
         "--hidden-import",
         "pvh_filename.simple_ai_color",
         "--hidden-import",
+        "pvh_filename.simple_color_memory",
+        "--hidden-import",
         "pvh_filename.simple_as",
         "--hidden-import",
         "pvh_filename.simple_angle_heuristics",
