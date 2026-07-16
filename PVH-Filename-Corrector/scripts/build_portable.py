@@ -124,6 +124,9 @@ def write_launchers(portable: Path, exe_name: str) -> None:
     產品前綴_SIDE.jpg
     產品前綴_CORNER.jpg
     產品前綴_CWF_654-920.jpg
+    產品前綴_D65_DESERT_SKY.jpg
+    產品前綴_CWF_WHITE.jpg
+  （對色相正確色名會用來訓練色名記憶）
   然後返回上一層，雙擊「2_學習模式_訓練模型.bat」
 """,
         encoding="utf-8",
