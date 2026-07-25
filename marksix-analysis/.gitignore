@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+data/raw/
+output/summary.json
+output/frequency.csv
+output/gaps.csv
+output/consecutive_pairs.csv
