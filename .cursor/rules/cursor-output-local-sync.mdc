@@ -1,0 +1,33 @@
+---
+alwaysApply: true
+---
+
+# Agent deliverables → local `Cursor output/`
+
+This repo is the user's local **Vibe Coding Area** folder. All agents (Cloud Agent, IDE Agent, subagents) must sync user-facing outputs into the repo so they appear after git pull/merge on the user's machine.
+
+## Required output location
+
+- Put **all deliverable outputs** under repo-root `Cursor output/` (create it if missing).
+- Examples: notes, summaries, Q&A knowledge bases, reports, CSVs, charts, exports, checklists, walkthrough docs meant for the user to reopen later.
+- Prefer a clear subfolder by topic, e.g.:
+  - `Cursor output/YouTube知識筆記/`
+  - `Cursor output/報告/`
+  - `Cursor output/<project-or-topic>/`
+- Use descriptive filenames (date or source id when helpful).
+
+## Do not
+
+- Do not leave deliverables only in chat.
+- Do not put user deliverables only under `/tmp`, `/opt/cursor/artifacts`, or other ephemeral paths without also copying the final files into `Cursor output/`.
+- Do not scatter one-off notes across random project folders unless the user asked for a specific project path.
+
+## Git sync (so local folder sees them)
+
+- Commit files under `Cursor output/` on the working branch and push, so the user's local clone can pull and open them in **Vibe Coding Area**.
+- When updating an existing note, edit the file in `Cursor output/` rather than creating a disconnected copy.
+
+## Scope exceptions
+
+- Normal product/source code still goes in the relevant project directories (`Trading Bot/`, `Crypto Screener/`, etc.).
+- This rule is about **agent-produced artifacts and knowledge the user wants to keep and reopen locally**.
