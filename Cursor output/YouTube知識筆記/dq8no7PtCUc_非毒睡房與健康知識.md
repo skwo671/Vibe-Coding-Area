@@ -1,4 +1,4 @@
-# YouTube 健康知識筆記（連時間戳）
+# YouTube 健康知識筆記（連時間戳連結）
 
 **你分享嘅片：** https://www.youtube.com/watch?v=dq8no7PtCUc  
 **標題：** 秒睡睡房設計｜開窗開冷氣？｜日日滑浪唔搽防曬都皮膚好？｜網絡精華遊EP 6（約 **23:52**）  
@@ -6,44 +6,45 @@
 **記錄日期：** 2026-08-10  
 
 **時間戳說明：**  
-- 以下時間以**原片** `c7Rm6sT35Tk` 為準。  
-- **粗體時間** = 原片官方章節（description chapters）。  
-- 其餘細項 = 用官方章節校準後嘅估計開始時間（約 ±15–30 秒）。  
-- 粵語精華片可能有旁白／廣告，時間會同原片有偏移；對應知識請用原片時間跳轉最準。  
+- 以下時間以**原片**為準；**撳時間就可以跳去片入面嗰段**。  
+- **粗體時間** = 原片官方章節；其餘細項為校準估計（約 ±15–30 秒）。  
+- 粵語精華片可能有旁白／廣告偏移；對應知識用原片連結最準。  
 - 內容屬講者觀點／經驗，非醫療診斷。
+
+連結格式：`https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=秒數`
 
 ---
 
-## 時間索引（快速跳轉）
+## 時間索引（撳時間跳去睇）
 
 | 時間 | 主題 |
 |------|------|
-| **0:00** | 開場：睡房係恢復工具定傷害你 |
-| **0:48** | 床褥（無毒認證、避 VOC／阻燃劑） |
-| 1:46 | 亞麻床單、有機棉、羊毛毯 |
-| 2:04 | 睡房只用作瞓覺 |
-| **2:21** | 瞓前腳靠牆 10 分鐘 + 呼吸法 |
-| **3:23** | 光線：紅光、避藍光 LED |
-| 3:53 | 遮光簾 |
-| 4:01 | 房溫盡量凍 |
-| **4:13** | CO2 監測與通風 |
-| 5:50 | 空氣過濾器／PM2.5 |
-| 7:09 | 夜間睡約 8.5–9 小時 |
-| **7:27** | 午睡 20–30 分鐘 |
-| 8:49 | 日間飲食亦影響睡眠 |
-| **9:30** | 衣櫃：羊毛／有機棉 |
-| **11:16** | 淋浴：羊奶皂、唔用洗頭水 |
-| 11:58 | 沖涼水／淋浴過濾器 |
-| **12:45** | 洗手間極簡護理 |
-| **13:03** | 牙線 PFA-free、牙刷、鼻貼／耳塞／遮眼、暗瘡與飲食、牙膏／氟 |
-| **17:58** | 從睡房拿走手機（飛行模式等） |
-| **18:46** | 總結 |
+| [**0:00**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=0s) | 開場：睡房係恢復工具定傷害你 |
+| [**0:48**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=48s) | 床褥（無毒認證、避 VOC／阻燃劑） |
+| [1:46](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=106s) | 亞麻床單、有機棉、羊毛毯 |
+| [2:04](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=124s) | 睡房只用作瞓覺 |
+| [**2:21**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=141s) | 瞓前腳靠牆 10 分鐘 + 呼吸法 |
+| [**3:23**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=203s) | 光線：紅光、避藍光 LED |
+| [3:53](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=233s) | 遮光簾 |
+| [4:01](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=241s) | 房溫盡量凍 |
+| [**4:13**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=253s) | CO2 監測與通風 |
+| [5:50](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=350s) | 空氣過濾器／PM2.5 |
+| [7:09](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=429s) | 夜間睡約 8.5–9 小時 |
+| [**7:27**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=447s) | 午睡 20–30 分鐘 |
+| [8:49](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=529s) | 日間飲食亦影響睡眠 |
+| [**9:30**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=570s) | 衣櫃：羊毛／有機棉 |
+| [**11:16**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=676s) | 淋浴：羊奶皂、唔用洗頭水 |
+| [11:58](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=718s) | 沖涼水／淋浴過濾器 |
+| [**12:45**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=765s) | 洗手間極簡護理 |
+| [**13:03**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=783s) | 牙線 PFA-free、牙刷、鼻貼／耳塞／遮眼、暗瘡與飲食、牙膏／氟 |
+| [**17:58**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=1078s) | 從睡房拿走手機（飛行模式等） |
+| [**18:46**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=1126s) | 總結 |
 
-原片官方章節原文：Intro → Bed → 10-minute routine → Lights → Air quality → Napping → Closet → Shower → Bathroom → Dental care → Remove this from your bedroom → Outro
+原片官方章節：Intro → Bed → 10-minute routine → Lights → Air quality → Napping → Closet → Shower → Bathroom → Dental care → Remove this from your bedroom → Outro
 
 ---
 
-## 核心觀點（0:00）
+## 核心觀點（[0:00](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=0s)）
 
 睡房可以係最強嘅「恢復工具」，亦可以反過嚟傷害你。多數人嘅睡房係後者。目標：令身體一入房就知道「呢度係瞓覺地方」，並平衡**溫度、光線、空氣質素（CO2／PM2.5）**。
 
@@ -51,29 +52,29 @@
 
 ---
 
-## 1. 床與寢具（0:48 起）
+## 1. 床與寢具（[0:48](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=48s) 起）
 
 | 時間 | 項目 | 建議 |
 |------|------|------|
-| **0:48** | 床褥 | 選無毒：避 polyurethane foam 釋放 VOC、有問題嘅膠、阻燃劑；可留意 CertiPUR-US、Clean Air Gold、**GREENGUARD Gold**；唔硬推品牌；講者用 medium firmness |
-| 1:46 | 床單／枕袋 | **亞麻（linen）**：透氣、相對乾淨／安全；較貴但值得 |
-| 1:46 | 棉質床單 | 盡量用 **organic cotton（有機棉）** |
-| 1:46 | 保暖 | 羊毛毯（wool blanket） |
+| [**0:48**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=48s) | 床褥 | 選無毒：避 polyurethane foam 釋放 VOC、有問題嘅膠、阻燃劑；可留意 CertiPUR-US、Clean Air Gold、**GREENGUARD Gold**；唔硬推品牌；講者用 medium firmness |
+| [1:46](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=106s) | 床單／枕袋 | **亞麻（linen）**：透氣、相對乾淨／安全；較貴但值得 |
+| [1:46](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=106s) | 棉質床單 | 盡量用 **organic cotton（有機棉）** |
+| [1:46](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=106s) | 保暖 | 羊毛毯（wool blanket） |
 
 ---
 
-## 2. 睡房用途：只畀瞓覺（約 2:04）
+## 2. 睡房用途：只畀瞓覺（[2:04](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=124s)）
 
 - 唔喺床上用 laptop 做嘢  
 - 唔喺床上夜晚刷手機  
 - 甚至唔喺床上睇書  
 - 原則：入房 = 身體認定「瞓覺 spot」，強化關聯  
 
-（官方下一章 **2:21** 開始講 10 分鐘例行）
+（官方下一章 [**2:21**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=141s) 開始講 10 分鐘例行）
 
 ---
 
-## 3. 瞓前 10 分鐘：腳靠牆 + 呼吸（**2:21**）
+## 3. 瞓前 10 分鐘：腳靠牆 + 呼吸（[**2:21**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=141s)）
 
 **做法：** 瞓前最後約 10–15 分鐘，仰臥、腳抬高靠牆，做深呼吸／冥想。
 
@@ -87,25 +88,25 @@
 
 ---
 
-## 4. 光線（**3:23**）
+## 4. 光線（[**3:23**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=203s)）
 
 | 時間 | 要避免／要用 | 原因 |
 |------|----------------|------|
-| **3:23** | 避藍光／LED | 干擾晝夜節律、視交叉上核（SCN）、褪黑激素 |
-| **3:23** | 避閃爍燈光（紅或藍，尤其手機） | 可觸發交感神經（fight-or-flight），搞亂睡眠架構 |
-| **3:23** | 用單一**紅色白熾燈** | 講者夜間唯一光源偏好 |
-| 3:53 | **Blackout curtains** | 盡量全黑 |
+| [**3:23**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=203s) | 避藍光／LED | 干擾晝夜節律、視交叉上核（SCN）、褪黑激素 |
+| [**3:23**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=203s) | 避閃爍燈光（紅或藍，尤其手機） | 可觸發交感神經（fight-or-flight），搞亂睡眠架構 |
+| [**3:23**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=203s) | 用單一**紅色白熾燈** | 講者夜間唯一光源偏好 |
+| [3:53](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=233s) | **Blackout curtains** | 盡量全黑 |
 
 ---
 
-## 5. 溫度（約 4:01）
+## 5. 溫度（[4:01](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=241s)）
 
 - 夜間盡量將房溫調到「愈凍愈好」（配合 AC）  
-- 要同時兼顧通風／CO2（見下；官方空氣章 **4:13**）
+- 要同時兼顧通風／CO2（見下；官方空氣章 [**4:13**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=253s)）
 
 ---
 
-## 6. 空氣質素：CO2（**4:13**）
+## 6. 空氣質素：CO2（[**4:13**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=253s)）
 
 - 用 **CO2 meter** 監測睡房  
 - 開窗／留縫通風：即使開冷氣，都唔完全關死，留空氣流通  
@@ -115,7 +116,7 @@
 
 ---
 
-## 7. 空氣質素：PM2.5 與過濾（約 5:50）
+## 7. 空氣質素：PM2.5 與過濾（[5:50](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=350s)）
 
 - 用空氣過濾器（片中 **Jasper／Jaspr**；顯示 **PM2.5**）  
 - **PM2.5 若明顯高過約 5**：可能令睡眠同空氣質素變差  
@@ -124,19 +125,19 @@
 
 ---
 
-## 8. 睡眠時長與午睡（7:09／**7:27**）
+## 8. 睡眠時長與午睡（[7:09](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=429s)／[**7:27**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=447s)）
 
 | 時間 | 內容 |
 |------|------|
-| 7:09 | 夜間約 **8.5–9 小時**；至少約 8 小時；早睡早起；預留 wind down |
-| **7:27** | 午睡約 **20–30 分鐘**最理想；太長 → sleep inertia |
-| **7:27** | NASA 等：短午睡有恢復作用；可影響 LTP、改善 **neuroplasticity** |
+| [7:09](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=429s) | 夜間約 **8.5–9 小時**；至少約 8 小時；早睡早起；預留 wind down |
+| [**7:27**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=447s) | 午睡約 **20–30 分鐘**最理想；太長 → sleep inertia |
+| [**7:27**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=447s) | NASA 等：短午睡有恢復作用；可影響 LTP、改善 **neuroplasticity** |
 | 做法 | 拉簾、衫遮眼、耳塞、mini nap |
-| 8:49 | 日間飲食質素同進食時間亦影響夜間睡眠（講者提網站資源） |
+| [8:49](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=529s) | 日間飲食質素同進食時間亦影響夜間睡眠（講者提網站資源） |
 
 ---
 
-## 9. 衣物與纖維（**9:30**）
+## 9. 衣物與纖維（[**9:30**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=570s)）
 
 | 優先 | 注意 |
 |------|------|
@@ -146,38 +147,38 @@
 
 ---
 
-## 10. 個人護理減毒（**11:16** 淋浴起）
+## 10. 個人護理減毒（[**11:16**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=676s) 淋浴起）
 
-### 沐浴露／洗頭（**11:16**）
+### 沐浴露／洗頭（[**11:16**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=676s)）
 - **Natural goat soap（羊奶皂）**  
 - 唔鍾意 body wash：香精、**phthalates、parabens**  
 - 多數洗頭水成分複雜 → 少用／唔用；海鹽水當「護髮」  
 - 留意護膚品中嘅 **內分泌干擾物（EDCs）**
 
-### 沖涼水（約 11:58）
+### 沖涼水（[11:58](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=718s)）
 - 全屋過濾，或至少 **shower filter**  
 - 熱水淋浴更易經 **呼吸道吸入** 水中農藥／藥物殘留／金屬等  
 
-### 洗面／護膚（**12:45** 洗手間）
+### 洗面／護膚（[**12:45**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=765s)）
 - 日常唔搽 face cream／lotion  
 - 偶爾 **tallow** 保濕；游水用 **tallow-based sunscreen**  
-- **暗瘡（約 14:41）：** 質疑「洗唔夠／benzoyl peroxide」；認為應**先清理飲食**  
+- **暗瘡（[14:41](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=881s)）：** 質疑「洗唔夠／benzoyl peroxide」；認為應**先清理飲食**  
 
 ---
 
-## 11. 口腔護理（**13:03** Dental care）
+## 11. 口腔護理（[**13:03**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=783s) Dental care）
 
 | 時間 | 項目 | 觀點 |
 |------|------|------|
-| **13:03** | 牙線 | 每日兩次；**PFA-free**；避 Gore-Tex／部分 Glide（研究：體內 PFA 較高） |
-| 13:30 | 牙刷 | 豬鬃 → 植物基刷毛（如蓖麻油）；避塑膠刷毛 **微塑膠** |
-| 14:11 | 瞓覺配件 | **耳塞** + **鼻貼（Breathe Right）** + **棉質 T-shirt 遮眼** |
-| 15:32 | 牙膏／氟 | 講者唔用牙膏；刷牙重點係破壞牙菌斑；反對氟牙膏／自來水加氟；指高氟與兒童較低 IQ 有關；蛀牙應由飲食著手 |
+| [**13:03**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=783s) | 牙線 | 每日兩次；**PFA-free**；避 Gore-Tex／部分 Glide（研究：體內 PFA 較高） |
+| [13:30](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=810s) | 牙刷 | 豬鬃 → 植物基刷毛（如蓖麻油）；避塑膠刷毛 **微塑膠** |
+| [14:11](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=851s) | 瞓覺配件 | **耳塞** + **鼻貼（Breathe Right）** + **棉質 T-shirt 遮眼** |
+| [15:32](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=932s) | 牙膏／氟 | 講者唔用牙膏；刷牙重點係破壞牙菌斑；反對氟牙膏／自來水加氟；指高氟與兒童較低 IQ 有關；蛀牙應由飲食著手 |
 | 口氣 | | 口臭 ↔ 腸道 dysbiosis／飲食，唔係牙膏唔夠 |
 
 ---
 
-## 12. 手機與干擾（**17:58**）
+## 12. 手機與干擾（[**17:58**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=1078s)）
 
 **從睡房拿走／遠離手機** → 聲稱大幅改善睡眠。
 
@@ -188,30 +189,30 @@
 
 ---
 
-## 13. 總結（**18:46**）
+## 13. 總結（[**18:46**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=1126s)）
 
 睡房愈簡單愈好：天然物料、少塑膠／polyester、少 EMF／雜物；至少 8 小時睡眠（可能喺房 9–10 小時含 wind down）→ 優化睡房 ROI 高。
 
 ---
 
-## 快速 Checklist（連原片時間）
+## 快速 Checklist（撳時間跳去睇）
 
-1. **0:48** 無毒床褥 + **1:46** 亞麻／有機棉／羊毛  
-2. **2:04** 床只畀瞓  
-3. **2:21** 腳靠牆 10 分鐘 + box／4-7-8  
-4. **3:23** 全黑 + 少藍光；紅光白熾；**3:53** 遮光簾  
-5. **4:01** 房凍；**4:13** 降 CO2；**5:50** 過濾 PM2.5  
-6. **7:09–7:27** 8 小時 + 可選 20–30 分午睡  
-7. **9:30** 天然纖維衣物  
-8. **11:16–15:32** 極簡護理、過濾沖涼水、PFA-free 牙線等  
-9. **14:11** 耳塞 + 鼻貼 + 遮眼  
-10. **17:58** 手機遠離／飛行模式  
+1. [**0:48**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=48s) 無毒床褥 + [1:46](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=106s) 亞麻／有機棉／羊毛  
+2. [2:04](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=124s) 床只畀瞓  
+3. [**2:21**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=141s) 腳靠牆 10 分鐘 + box／4-7-8  
+4. [**3:23**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=203s) 全黑 + 少藍光；紅光白熾；[3:53](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=233s) 遮光簾  
+5. [4:01](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=241s) 房凍；[**4:13**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=253s) 降 CO2；[5:50](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=350s) 過濾 PM2.5  
+6. [7:09](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=429s)–[**7:27**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=447s) 8 小時 + 可選 20–30 分午睡  
+7. [**9:30**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=570s) 天然纖維衣物  
+8. [**11:16**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=676s)–[15:32](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=932s) 極簡護理、過濾沖涼水、PFA-free 牙線等  
+9. [14:11](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=851s) 耳塞 + 鼻貼 + 遮眼  
+10. [**17:58**](https://www.youtube.com/watch?v=c7Rm6sT35Tk&t=1078s) 手機遠離／飛行模式  
 
 ---
 
 ## 問答提示
 
-- 用戶問「邊度講」「幾多分開始」→ 用本檔時間索引答，並註明係**原片時間**。  
+- 用戶問「邊度講」「幾多分開始」→ 回覆時一併俾**可撳嘅原片時間連結**。  
 - 用戶指粵語精華片時間 → 說明精華片約 23:52、可能有旁白偏移，建議用原片連結跳轉。  
 - 標明係講者觀點，唔當作個人醫療建議。  
 - 超出範圍 → 講「片無提及」。  
