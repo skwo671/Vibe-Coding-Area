@@ -12,3 +12,4 @@
 |------|------|
 | `YouTube知識筆記/` | YouTube 健康知識筆記（可撳時間戳跳片） |
 | `report/`、`*candidates.csv`、`*charts/` 等 | 市場／crypto 掃描輸出 |
+| `報告/` | 每日持倉盈虧快照（HKT） |
