@@ -1,0 +1,62 @@
+[
+  {
+    "file": "01_最愛_男聲全新編曲.mp3",
+    "title": "最愛・男聲全新編曲伴奏",
+    "mood": "溫柔慢板・鋼琴＋弦樂（致敬經典情歌氣氛，原創和弦床）",
+    "bpm": 68,
+    "key": "G major（男聲舒適調，相對女聲原調約降 4 個半音）",
+    "bars": 56,
+    "approx_sec": 207,
+    "duration_sec": 207.3
+  },
+  {
+    "file": "02_流言_男聲全新編曲.mp3",
+    "title": "流言・男聲全新編曲伴奏",
+    "mood": "惘然中板・指彈吉他＋柔和 pad",
+    "bpm": 76,
+    "key": "A minor（男聲建議調，相對女聲約降 3–4 個半音）",
+    "bars": 52,
+    "approx_sec": 173,
+    "duration_sec": 173.3
+  },
+  {
+    "file": "03_情網_男聲全新編曲.mp3",
+    "title": "情網・男聲全新編曲伴奏",
+    "mood": "纏綿中慢板・電鋼琴＋弦樂 sweep",
+    "bpm": 72,
+    "key": "F major（男聲建議調）",
+    "bars": 56,
+    "approx_sec": 196,
+    "duration_sec": 196.0
+  },
+  {
+    "file": "04_心軟_男聲全新編曲.mp3",
+    "title": "心軟・男聲全新編曲伴奏",
+    "mood": "輕柔告白・明亮大調慢板",
+    "bpm": 70,
+    "key": "D major（男聲建議調）",
+    "bars": 52,
+    "approx_sec": 188,
+    "duration_sec": 187.8
+  },
+  {
+    "file": "05_紅顏知己_男聲全新編曲.mp3",
+    "title": "紅顏知己・男聲全新編曲伴奏",
+    "mood": "知性中板・尼龍吉他＋輕鼓點",
+    "bpm": 82,
+    "key": "E minor（男聲建議調）",
+    "bars": 52,
+    "approx_sec": 161,
+    "duration_sec": 160.9
+  },
+  {
+    "file": "06_從今開始_男聲全新編曲.mp3",
+    "title": "從今開始・男聲全新編曲伴奏",
+    "mood": "開朗希望・流行中板",
+    "bpm": 88,
+    "key": "C major（男聲建議調）",
+    "bars": 56,
+    "approx_sec": 161,
+    "duration_sec": 161.2
+  }
+]
