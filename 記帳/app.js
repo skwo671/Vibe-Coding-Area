@@ -113,13 +113,13 @@ function renderDayChart(target, rows) {
   const width = 680;
   const height = 220;
   const pad = { l: 52, r: 16, t: 16, b: 32 };
-  const max = Math.max(1, ...slots.map((slot) => slot.amount));
+  const max = Math.max(1, ...slots.map((slot) => slot.cumulative));
   const x = (index) => pad.l + (index * (width - pad.l - pad.r)) / (slots.length - 1);
   const y = (value) => pad.t + ((max - value) * (height - pad.t - pad.b)) / max;
-  const line = slots.map((slot, index) => `${x(index)},${y(slot.amount)}`).join(" ");
+  const line = slots.map((slot, index) => `${x(index)},${y(slot.cumulative)}`).join(" ");
   const dots = slots.map((slot, index) => `
-    <circle cx="${x(index)}" cy="${y(slot.amount)}" r="3.5" fill="#9a3d2f">
-      <title>${slot.label}–${String(slot.hour + 2).padStart(2, "0")}:00 ${money(slot.amount)}</title>
+    <circle cx="${x(index)}" cy="${y(slot.cumulative)}" r="3.5" fill="#9a3d2f">
+      <title>${slot.label} 累積 ${money(slot.cumulative)}</title>
     </circle>
     <text x="${x(index)}" y="${height - 10}" text-anchor="middle" font-size="11" fill="#6d655c">${slot.hour}</text>`).join("");
   const grid = [0, max / 2, max].map((value) => `
@@ -134,8 +134,35 @@ function renderDayChart(target, rows) {
       <polyline fill="none" stroke="#9a3d2f" stroke-width="2.5" points="${line}"></polyline>
       ${dots}
     </svg>
-    <div class="legend"><span><i class="swatch" style="background:#9a3d2f"></i>${dayLabel(state.day)}各兩小時支出</span></div>
+    <div class="legend"><span><i class="swatch" style="background:#9a3d2f"></i>${dayLabel(state.day)}累積支出</span></div>
     ${missing}`;
+}
+
+function renderWeekChart(target, rows) {
+  const days = weekSpend(rows, state.day);
+  const width = 680;
+  const height = 220;
+  const pad = { l: 56, r: 16, t: 16, b: 32 };
+  const max = Math.max(1, ...days.map((day) => day.cumulative));
+  const x = (index) => pad.l + (index * (width - pad.l - pad.r)) / (days.length - 1);
+  const y = (value) => pad.t + ((max - value) * (height - pad.t - pad.b)) / max;
+  const line = days.map((day, index) => `${x(index)},${y(day.cumulative)}`).join(" ");
+  const dots = days.map((day, index) => `
+    <circle cx="${x(index)}" cy="${y(day.cumulative)}" r="3.5" fill="#1e4d86">
+      <title>${dayLabel(day.date)} 當日 ${money(day.amount)}，累積 ${money(day.cumulative)}</title>
+    </circle>
+    <text x="${x(index)}" y="${height - 10}" text-anchor="middle" font-size="11" fill="#6d655c">${Number(day.date.slice(8))}日</text>`).join("");
+  const grid = [0, max / 2, max].map((value) => `
+    <line x1="${pad.l}" x2="${width - pad.r}" y1="${y(value)}" y2="${y(value)}" stroke="#eadfce" />
+    <text x="4" y="${y(value) + 4}" font-size="11" fill="#6d655c">${Math.round(value)}</text>`).join("");
+  const last = days[days.length - 1];
+  target.innerHTML = `
+    <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="七日累積支出">
+      ${grid}
+      <polyline fill="none" stroke="#1e4d86" stroke-width="2.5" points="${line}"></polyline>
+      ${dots}
+    </svg>
+    <div class="legend"><span><i class="swatch" style="background:#1e4d86"></i>${dayLabel(days[0].date)}至${dayLabel(last.date)}累積 ${money(last.cumulative)}</span></div>`;
 }
 
 function renderChart(months) {
@@ -304,12 +331,14 @@ function render() {
   if (state.tab === "overview") {
     renderStats(rows, months);
     renderDayChart($("day-chart-overview"), rows);
+    renderWeekChart($("week-chart-overview"), rows);
     renderChart(months);
     renderTable(months);
     renderReconcile();
   } else if (state.tab === "ledger") {
     fillFilters(rows);
     renderDayChart($("day-chart"), rows);
+    renderWeekChart($("week-chart"), rows);
     renderLedger(rows);
   } else {
     renderFixed();

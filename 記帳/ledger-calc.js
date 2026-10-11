@@ -72,7 +72,31 @@ function daySpendBySlot(transactions, date) {
     const index = Math.min(11, Math.floor(hour / 2));
     slots[index].amount = roundMoney(slots[index].amount + row.amount);
   }
+  let running = 0;
+  for (const slot of slots) {
+    running = roundMoney(running + slot.amount);
+    slot.cumulative = running;
+  }
   return { slots, untimed };
+}
+
+function shiftDate(date, days) {
+  const [year, month, day] = String(date).split("-").map(Number);
+  const next = new Date(Date.UTC(year, month - 1, day + days));
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}`;
+}
+
+function weekSpend(transactions, endDate) {
+  let running = 0;
+  const days = [];
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = shiftDate(endDate, -offset);
+    const amount = dayTotal(transactions, date);
+    running = roundMoney(running + amount);
+    days.push({ date, amount, cumulative: running });
+  }
+  return days;
 }
 
 function latestDate(transactions) {
