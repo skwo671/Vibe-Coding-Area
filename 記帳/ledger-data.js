@@ -2268,6 +2268,7 @@ var LEDGER = {
       "name": "牛角",
       "amount": 293.7,
       "category": "飲食",
+      "time": "19:23",
       "id": "imp-0239",
       "source": "import"
     }

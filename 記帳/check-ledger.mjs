@@ -7,7 +7,7 @@ for (const file of ["ledger-data.js", "ledger-calc.js"]) {
   vm.runInContext(fs.readFileSync(new URL(file, import.meta.url), "utf8"), context);
 }
 
-const { LEDGER, buildMonths, sumByType, dayTotal } = context;
+const { LEDGER, buildMonths, sumByType, dayTotal, daySpendBySlot } = context;
 const months = buildMonths(LEDGER.transactions, LEDGER.months, LEDGER.defaultBudget);
 const byKey = Object.fromEntries(months.map((month) => [month.key, month]));
 
@@ -27,6 +27,9 @@ assertClose(byKey["2026-10"].pool, 4858.96, "October opening");
 assertClose(byKey["2026-10"].expense, 2598.86, "October spend");
 assertClose(byKey["2026-10"].remainder, 2260.1, "October remainder");
 assertClose(dayTotal(LEDGER.transactions, "2026-10-10"), 339.97, "10 Oct spend");
+const oct11 = daySpendBySlot(LEDGER.transactions, "2026-10-11");
+assertClose(oct11.slots[9].amount, 293.7, "牛角 in 18:00 slot");
+assertClose(oct11.untimed, 0, "11 Oct has times");
 assertClose(sumByType(LEDGER.transactions, "expense") > 15000 ? 1 : 0, 1, "has history");
 
 const fixed = LEDGER.fixed.reduce((sum, row) => sum + row.amount, 0);

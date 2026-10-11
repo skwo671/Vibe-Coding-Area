@@ -55,6 +55,26 @@ function dayTotal(transactions, date) {
   );
 }
 
+function daySpendBySlot(transactions, date) {
+  const slots = Array.from({ length: 12 }, (_, index) => {
+    const hour = index * 2;
+    return { hour, label: `${String(hour).padStart(2, "0")}:00`, amount: 0 };
+  });
+  let untimed = 0;
+  for (const row of transactions) {
+    if (row.date !== date || row.type !== "expense") continue;
+    const match = /^(\d{2}):(\d{2})$/.exec(row.time || "");
+    if (!match) {
+      untimed = roundMoney(untimed + row.amount);
+      continue;
+    }
+    const hour = Number(match[1]);
+    const index = Math.min(11, Math.floor(hour / 2));
+    slots[index].amount = roundMoney(slots[index].amount + row.amount);
+  }
+  return { slots, untimed };
+}
+
 function latestDate(transactions) {
   return transactions.reduce((latest, row) => (row.date > latest ? row.date : latest), "");
 }

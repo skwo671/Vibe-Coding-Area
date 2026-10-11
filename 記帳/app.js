@@ -47,7 +47,7 @@ function transactions() {
     .filter((row) => !state.hidden.has(row.id))
     .concat(state.extra)
     .slice()
-    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || "") || a.id.localeCompare(b.id));
 }
 
 function currentNet() {
@@ -90,6 +90,52 @@ function renderStats(rows, months) {
     state.day = event.target.value;
     render();
   });
+}
+
+function hkNow() {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Hong_Kong",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date()).map((part) => [part.type, part.value])
+  );
+  const hour = parts.hour === "24" ? "00" : parts.hour;
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${hour}:${parts.minute}` };
+}
+
+function renderDayChart(target, rows) {
+  const { slots, untimed } = daySpendBySlot(rows, state.day);
+  const width = 680;
+  const height = 220;
+  const pad = { l: 52, r: 16, t: 16, b: 32 };
+  const max = Math.max(1, ...slots.map((slot) => slot.amount));
+  const x = (index) => pad.l + (index * (width - pad.l - pad.r)) / (slots.length - 1);
+  const y = (value) => pad.t + ((max - value) * (height - pad.t - pad.b)) / max;
+  const line = slots.map((slot, index) => `${x(index)},${y(slot.amount)}`).join(" ");
+  const dots = slots.map((slot, index) => `
+    <circle cx="${x(index)}" cy="${y(slot.amount)}" r="3.5" fill="#9a3d2f">
+      <title>${slot.label}–${String(slot.hour + 2).padStart(2, "0")}:00 ${money(slot.amount)}</title>
+    </circle>
+    <text x="${x(index)}" y="${height - 10}" text-anchor="middle" font-size="11" fill="#6d655c">${slot.hour}</text>`).join("");
+  const grid = [0, max / 2, max].map((value) => `
+    <line x1="${pad.l}" x2="${width - pad.r}" y1="${y(value)}" y2="${y(value)}" stroke="#eadfce" />
+    <text x="4" y="${y(value) + 4}" font-size="11" fill="#6d655c">${Math.round(value)}</text>`).join("");
+  const missing = untimed
+    ? `<p class="hint">呢日有 ${money(untimed)} 冇記錄時間，所以冇畫入線圖。</p>`
+    : "";
+  target.innerHTML = `
+    <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${dayLabel(state.day)}每兩小時支出">
+      ${grid}
+      <polyline fill="none" stroke="#9a3d2f" stroke-width="2.5" points="${line}"></polyline>
+      ${dots}
+    </svg>
+    <div class="legend"><span><i class="swatch" style="background:#9a3d2f"></i>${dayLabel(state.day)}各兩小時支出</span></div>
+    ${missing}`;
 }
 
 function renderChart(months) {
@@ -257,11 +303,13 @@ function render() {
   }
   if (state.tab === "overview") {
     renderStats(rows, months);
+    renderDayChart($("day-chart-overview"), rows);
     renderChart(months);
     renderTable(months);
     renderReconcile();
   } else if (state.tab === "ledger") {
     fillFilters(rows);
+    renderDayChart($("day-chart"), rows);
     renderLedger(rows);
   } else {
     renderFixed();
@@ -282,6 +330,7 @@ $("entry-form").addEventListener("submit", (event) => {
   state.extra.push({
     id: `new-${Date.now()}`,
     date: data.get("date"),
+    time: data.get("time"),
     type: data.get("type"),
     name: String(data.get("name")).trim(),
     amount: roundMoney(data.get("amount")),
@@ -292,7 +341,9 @@ $("entry-form").addEventListener("submit", (event) => {
   state.day = data.get("date");
   saveExtra();
   form.reset();
+  const now = hkNow();
   form.date.value = state.day;
+  form.time.value = now.time;
   render();
 });
 
@@ -309,5 +360,7 @@ $("search").addEventListener("input", (event) => {
   render();
 });
 
-document.querySelector("#entry-form [name=date]").value = new Date().toISOString().slice(0, 10);
+const opening = hkNow();
+document.querySelector("#entry-form [name=date]").value = opening.date;
+document.querySelector("#entry-form [name=time]").value = opening.time;
 render();
