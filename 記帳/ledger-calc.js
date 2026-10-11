@@ -80,18 +80,13 @@ function daySpendBySlot(transactions, date) {
   return { slots, untimed };
 }
 
-function shiftDate(date, days) {
-  const [year, month, day] = String(date).split("-").map(Number);
-  const next = new Date(Date.UTC(year, month - 1, day + days));
-  const pad = (value) => String(value).padStart(2, "0");
-  return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}`;
-}
-
-function weekSpend(transactions, endDate) {
+function monthSpend(transactions, key) {
+  const [year, month] = String(key).split("-").map(Number);
+  const count = new Date(Date.UTC(year, month, 0)).getUTCDate();
   let running = 0;
   const days = [];
-  for (let offset = 6; offset >= 0; offset -= 1) {
-    const date = shiftDate(endDate, -offset);
+  for (let day = 1; day <= count; day += 1) {
+    const date = `${key}-${String(day).padStart(2, "0")}`;
     const amount = dayTotal(transactions, date);
     running = roundMoney(running + amount);
     days.push({ date, amount, cumulative: running });

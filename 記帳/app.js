@@ -138,31 +138,35 @@ function renderDayChart(target, rows) {
     ${missing}`;
 }
 
-function renderWeekChart(target, rows) {
-  const days = weekSpend(rows, state.day);
+function renderMonthSpendChart(target, rows, months) {
+  const key = monthKey(state.day);
+  const month = months.find((item) => item.key === key) || months[months.length - 1];
+  const days = monthSpend(rows, month.key);
   const width = 680;
-  const height = 220;
-  const pad = { l: 56, r: 16, t: 16, b: 32 };
-  const max = Math.max(1, ...days.map((day) => day.cumulative));
-  const x = (index) => pad.l + (index * (width - pad.l - pad.r)) / (days.length - 1);
-  const y = (value) => pad.t + ((max - value) * (height - pad.t - pad.b)) / max;
+  const height = 240;
+  const pad = { l: 58, r: 12, t: 16, b: 28 };
+  const max = roundMoney(month.budget * 1.2);
+  const x = (index) => pad.l + (index * (width - pad.l - pad.r)) / Math.max(days.length - 1, 1);
+  const y = (value) => pad.t + ((max - value) * (height - pad.t - pad.b)) / (max || 1);
   const line = days.map((day, index) => `${x(index)},${y(day.cumulative)}`).join(" ");
   const dots = days.map((day, index) => `
-    <circle cx="${x(index)}" cy="${y(day.cumulative)}" r="3.5" fill="#1e4d86">
+    <circle cx="${x(index)}" cy="${y(Math.min(day.cumulative, max))}" r="2.4" fill="#1e4d86">
       <title>${dayLabel(day.date)} 當日 ${money(day.amount)}，累積 ${money(day.cumulative)}</title>
-    </circle>
-    <text x="${x(index)}" y="${height - 10}" text-anchor="middle" font-size="11" fill="#6d655c">${Number(day.date.slice(8))}日</text>`).join("");
+    </circle>`).join("");
+  const labels = days.map((day, index) => `
+    <text x="${x(index)}" y="${height - 8}" text-anchor="middle" font-size="9" fill="#6d655c">${index + 1}</text>`).join("");
   const grid = [0, max / 2, max].map((value) => `
     <line x1="${pad.l}" x2="${width - pad.r}" y1="${y(value)}" y2="${y(value)}" stroke="#eadfce" />
     <text x="4" y="${y(value) + 4}" font-size="11" fill="#6d655c">${Math.round(value)}</text>`).join("");
   const last = days[days.length - 1];
   target.innerHTML = `
-    <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="七日累積支出">
+    <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${monthLabel(month.key)}累積支出">
       ${grid}
       <polyline fill="none" stroke="#1e4d86" stroke-width="2.5" points="${line}"></polyline>
       ${dots}
+      ${labels}
     </svg>
-    <div class="legend"><span><i class="swatch" style="background:#1e4d86"></i>${dayLabel(days[0].date)}至${dayLabel(last.date)}累積 ${money(last.cumulative)}</span></div>`;
+    <div class="legend"><span><i class="swatch" style="background:#1e4d86"></i>${monthLabel(month.key)}累積 ${money(last.cumulative)}，縱軸 ${money(max)}（淨可支配 ${money(month.budget)} × 1.2）</span></div>`;
 }
 
 function renderChart(months) {
@@ -331,14 +335,14 @@ function render() {
   if (state.tab === "overview") {
     renderStats(rows, months);
     renderDayChart($("day-chart-overview"), rows);
-    renderWeekChart($("week-chart-overview"), rows);
+    renderMonthSpendChart($("month-chart-overview"), rows, months);
     renderChart(months);
     renderTable(months);
     renderReconcile();
   } else if (state.tab === "ledger") {
     fillFilters(rows);
     renderDayChart($("day-chart"), rows);
-    renderWeekChart($("week-chart"), rows);
+    renderMonthSpendChart($("month-chart"), rows, months);
     renderLedger(rows);
   } else {
     renderFixed();

@@ -7,7 +7,7 @@ for (const file of ["ledger-data.js", "ledger-calc.js"]) {
   vm.runInContext(fs.readFileSync(new URL(file, import.meta.url), "utf8"), context);
 }
 
-const { LEDGER, buildMonths, sumByType, dayTotal, daySpendBySlot, weekSpend } = context;
+const { LEDGER, buildMonths, sumByType, dayTotal, daySpendBySlot, monthSpend, roundMoney } = context;
 const months = buildMonths(LEDGER.transactions, LEDGER.months, LEDGER.defaultBudget);
 const byKey = Object.fromEntries(months.map((month) => [month.key, month]));
 
@@ -33,10 +33,11 @@ assertClose(oct11.slots[8].cumulative, 0, "cumulative before 18:00");
 assertClose(oct11.slots[9].cumulative, 293.7, "cumulative at 18:00");
 assertClose(oct11.slots[11].cumulative, 293.7, "cumulative holds after 18:00");
 assertClose(oct11.untimed, 0, "11 Oct has times");
-const week = weekSpend(LEDGER.transactions, "2026-10-11");
-assertClose(week.length, 7, "seven days");
-assertClose(week[0].date === "2026-10-05" ? 1 : 0, 1, "week starts 5 Oct");
-assertClose(week[6].cumulative, week.reduce((sum, day) => sum + day.amount, 0), "week cumulative");
+const octoberDays = monthSpend(LEDGER.transactions, "2026-10");
+assertClose(octoberDays.length, 31, "October day count");
+assertClose(octoberDays[0].date === "2026-10-01" ? 1 : 0, 1, "month starts on the 1st");
+assertClose(octoberDays[30].cumulative, byKey["2026-10"].expense, "month cumulative equals spend");
+assertClose(roundMoney(byKey["2026-10"].budget * 1.2), 5524.8, "October axis");
 assertClose(sumByType(LEDGER.transactions, "expense") > 15000 ? 1 : 0, 1, "has history");
 
 const fixed = LEDGER.fixed.reduce((sum, row) => sum + row.amount, 0);
