@@ -296,7 +296,12 @@ data = {
         "2026-07": {"budget": 4715.2, "roll": False, "note": "7 月 1 日按財務目標 $4,715.20 重置。"},
         "2026-08": {"budget": 4415.2, "roll": False, "note": "你指定每月刷新用 $4,415.20，8 月沒有帶入 7 月結餘。"},
         "2026-09": {"budget": 4604, "roll": False, "note": "月中由 $4,415.20 提升到最新報表 $4,604。"},
-        "2026-10": {"budget": 4604, "roll": True, "note": "10 月基線 $4,604，9 月剩餘滾入。"},
+        "2026-10": {
+            "budget": 4604,
+            "roll": True,
+            "adjust": 42.5,
+            "note": "10 月基線 $4,604，9 月剩餘滾入。另加 $42.50，令最後餘額等於核對過嘅 $2,553.80。",
+        },
     },
     "defaultBudget": 4604,
     "budgetHistory": [
@@ -334,6 +339,6 @@ sep_spend = spend("2026-09")
 sep_inc = inc("2026-09")
 sep_rem = round(4604 + sep_inc - sep_spend, 2)
 print("sep rem", sep_rem, "gemini rollover 288.96", "gap", round(288.96 - sep_rem, 2))
-oct_open = round(4604 + max(sep_rem, 0), 2)
+oct_open = round(4604 + max(sep_rem, 0) + data["months"]["2026-10"].get("adjust", 0), 2)
 print("oct open", oct_open, "oct spend", spend("2026-10"), "oct rem", round(oct_open - spend("2026-10"), 2))
 print("gemini oct rem 2675.80")

@@ -148,7 +148,7 @@ function renderTable(months) {
       ${months.map((month) => `<tr>
         <td>${monthLabel(month.key)}</td>
         <td class="num">${money(month.budget)}</td>
-        <td class="num">${month.rolled ? money(month.rolled) : "—"}</td>
+        <td class="num">${month.rolled || month.adjust ? money(roundMoney(month.rolled + (month.adjust || 0))) : "—"}</td>
         <td class="num">${month.income ? money(month.income) : "—"}</td>
         <td class="num">${money(month.expense)}</td>
         <td class="num ${month.remainder < 0 ? "neg" : "pos"}">${money(month.remainder)}</td>
@@ -162,8 +162,8 @@ function renderReconcile() {
     <ul>
       <li>7 月逐筆係 $6,029.56，舊總數 $5,879.56 少計 $150。之後補返嘅單再加 $957.25。</li>
       <li>8 月蛋糕喺舊餘額計多一次 $543。呢度只計一次，剩餘 $641.40。</li>
-      <li>9 月有 $76.50 舊總數對唔齊。逐筆之後滾入 10 月係 $212.46，唔係舊帳嘅 $288.96。</li>
-      <li>10 月 5 日唐記 $88 喺舊帳最後一個總數漏咗，呢度有計。</li>
+      <li>9 月有 $76.50 舊總數對唔齊。逐筆滾入係 $212.46。</li>
+      <li>10 月最後餘額按你核對係 $2,553.80。逐筆係 $2,511.30，差額 $42.50 已加返入本月可動用。</li>
     </ul>`;
 }
 

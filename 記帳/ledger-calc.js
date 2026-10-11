@@ -22,12 +22,14 @@ function buildMonths(transactions, settings, defaultBudget) {
       rows.filter((row) => row.type === "income").reduce((sum, row) => sum + row.amount, 0)
     );
     const rolled = cfg.roll && prevRemainder > 0 ? roundMoney(prevRemainder) : 0;
-    const pool = roundMoney(Number(cfg.budget) + rolled);
+    const adjust = roundMoney(Number(cfg.adjust || 0));
+    const pool = roundMoney(Number(cfg.budget) + rolled + adjust);
     const remainder = roundMoney(pool + income - expense);
     months.push({
       key,
       budget: roundMoney(Number(cfg.budget)),
       rolled,
+      adjust,
       pool,
       income,
       expense,
