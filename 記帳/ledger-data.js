@@ -78,13 +78,12 @@ var LEDGER = {
     "2026-09": {
       "budget": 4604,
       "roll": false,
-      "note": "月中由 $4,415.20 提升到最新報表 $4,604。"
+      "note": "月中由 $4,415.20 提升到最新報表 $4,604。月底補記 $42.50，對返 10 月餘額。"
     },
     "2026-10": {
       "budget": 4604,
       "roll": true,
-      "adjust": 42.5,
-      "note": "10 月基線 $4,604，9 月剩餘滾入。另加 $42.50，令最後餘額等於核對過嘅 $2,553.80。"
+      "note": "10 月基線 $4,604，9 月剩餘滾入。最後餘額 $2,553.80。"
     }
   },
   "defaultBudget": 4604,
@@ -1940,12 +1939,21 @@ var LEDGER = {
       "source": "import"
     },
     {
+      "date": "2026-09-30",
+      "type": "income",
+      "name": "補記差額",
+      "amount": 42.5,
+      "category": "其他收入",
+      "id": "imp-0203",
+      "source": "import"
+    },
+    {
       "date": "2026-10-01",
       "type": "expense",
       "name": "Pizza",
       "amount": 178.3,
       "category": "飲食",
-      "id": "imp-0203",
+      "id": "imp-0204",
       "source": "import"
     },
     {
@@ -1954,7 +1962,7 @@ var LEDGER = {
       "name": "蒜頭加洋蔥",
       "amount": 5.8,
       "category": "超市",
-      "id": "imp-0204",
+      "id": "imp-0205",
       "source": "import"
     },
     {
@@ -1963,7 +1971,7 @@ var LEDGER = {
       "name": "六合彩",
       "amount": 176,
       "category": "娛樂",
-      "id": "imp-0205",
+      "id": "imp-0206",
       "source": "import"
     },
     {
@@ -1972,7 +1980,7 @@ var LEDGER = {
       "name": "永年",
       "amount": 114,
       "category": "飲食",
-      "id": "imp-0206",
+      "id": "imp-0207",
       "source": "import"
     },
     {
@@ -1981,7 +1989,7 @@ var LEDGER = {
       "name": "TASTE x FRESH",
       "amount": 148.4,
       "category": "超市",
-      "id": "imp-0207",
+      "id": "imp-0208",
       "source": "import"
     },
     {
@@ -1990,7 +1998,7 @@ var LEDGER = {
       "name": "麥當勞",
       "amount": 9.5,
       "category": "飲食",
-      "id": "imp-0208",
+      "id": "imp-0209",
       "source": "import"
     },
     {
@@ -1999,7 +2007,7 @@ var LEDGER = {
       "name": "蓮子",
       "amount": 45,
       "category": "飲食",
-      "id": "imp-0209",
+      "id": "imp-0210",
       "source": "import"
     },
     {
@@ -2008,7 +2016,7 @@ var LEDGER = {
       "name": "飲茶",
       "amount": 189,
       "category": "飲食",
-      "id": "imp-0210",
+      "id": "imp-0211",
       "source": "import"
     },
     {
@@ -2017,7 +2025,7 @@ var LEDGER = {
       "name": "Mono Mono 青衣",
       "amount": 91.7,
       "category": "購物",
-      "id": "imp-0211",
+      "id": "imp-0212",
       "source": "import"
     },
     {
@@ -2026,7 +2034,7 @@ var LEDGER = {
       "name": "TASTE x FRESH",
       "amount": 13.8,
       "category": "超市",
-      "id": "imp-0212",
+      "id": "imp-0213",
       "source": "import"
     },
     {
@@ -2035,7 +2043,7 @@ var LEDGER = {
       "name": "蕃茄",
       "amount": 13.8,
       "category": "超市",
-      "id": "imp-0213",
+      "id": "imp-0214",
       "source": "import"
     },
     {
@@ -2044,7 +2052,7 @@ var LEDGER = {
       "name": "巴士去深圳灣",
       "amount": 127,
       "category": "交通",
-      "id": "imp-0214",
+      "id": "imp-0215",
       "source": "import"
     },
     {
@@ -2053,7 +2061,7 @@ var LEDGER = {
       "name": "南山睿印",
       "amount": 245.45,
       "category": "購物",
-      "id": "imp-0215",
+      "id": "imp-0216",
       "source": "import"
     },
     {
@@ -2062,7 +2070,7 @@ var LEDGER = {
       "name": "肯德基",
       "amount": 55,
       "category": "飲食",
-      "id": "imp-0216",
+      "id": "imp-0217",
       "source": "import"
     },
     {
@@ -2071,7 +2079,7 @@ var LEDGER = {
       "name": "滴滴出行",
       "amount": 17.94,
       "category": "交通",
-      "id": "imp-0217",
+      "id": "imp-0218",
       "source": "import"
     },
     {
@@ -2080,7 +2088,7 @@ var LEDGER = {
       "name": "滴滴出行",
       "amount": 29.62,
       "category": "交通",
-      "id": "imp-0218",
+      "id": "imp-0219",
       "source": "import"
     },
     {
@@ -2089,7 +2097,7 @@ var LEDGER = {
       "name": "香港大學深圳醫院",
       "amount": 29.5,
       "category": "醫療",
-      "id": "imp-0219",
+      "id": "imp-0220",
       "source": "import"
     },
     {
@@ -2098,7 +2106,7 @@ var LEDGER = {
       "name": "滴滴出行",
       "amount": 17.7,
       "category": "交通",
-      "id": "imp-0220",
+      "id": "imp-0221",
       "source": "import"
     },
     {
@@ -2107,7 +2115,7 @@ var LEDGER = {
       "name": "香港大學深圳醫院",
       "amount": 38.94,
       "category": "醫療",
-      "id": "imp-0221",
+      "id": "imp-0222",
       "source": "import"
     },
     {
@@ -2116,7 +2124,7 @@ var LEDGER = {
       "name": "滴滴出行",
       "amount": 19.24,
       "category": "交通",
-      "id": "imp-0222",
+      "id": "imp-0223",
       "source": "import"
     },
     {
@@ -2125,7 +2133,7 @@ var LEDGER = {
       "name": "唐記包點",
       "amount": 88,
       "category": "飲食",
-      "id": "imp-0223",
+      "id": "imp-0224",
       "source": "import"
     },
     {
@@ -2134,7 +2142,7 @@ var LEDGER = {
       "name": "食粥",
       "amount": 28,
       "category": "飲食",
-      "id": "imp-0224",
+      "id": "imp-0225",
       "source": "import"
     },
     {
@@ -2143,7 +2151,7 @@ var LEDGER = {
       "name": "大生",
       "amount": 74,
       "category": "超市",
-      "id": "imp-0225",
+      "id": "imp-0226",
       "source": "import"
     },
     {
@@ -2152,7 +2160,7 @@ var LEDGER = {
       "name": "牛奶",
       "amount": 16.5,
       "category": "超市",
-      "id": "imp-0226",
+      "id": "imp-0227",
       "source": "import"
     },
     {
@@ -2161,7 +2169,7 @@ var LEDGER = {
       "name": "腸仔包加叉燒",
       "amount": 57,
       "category": "飲食",
-      "id": "imp-0227",
+      "id": "imp-0228",
       "source": "import"
     },
     {
@@ -2170,7 +2178,7 @@ var LEDGER = {
       "name": "濕紙巾",
       "amount": 32,
       "category": "日用品",
-      "id": "imp-0228",
+      "id": "imp-0229",
       "source": "import"
     },
     {
@@ -2179,7 +2187,7 @@ var LEDGER = {
       "name": "竹蔗茅根",
       "amount": 28,
       "category": "飲食",
-      "id": "imp-0229",
+      "id": "imp-0230",
       "source": "import"
     },
     {
@@ -2188,7 +2196,7 @@ var LEDGER = {
       "name": "豆腐",
       "amount": 9,
       "category": "超市",
-      "id": "imp-0230",
+      "id": "imp-0231",
       "source": "import"
     },
     {
@@ -2197,7 +2205,7 @@ var LEDGER = {
       "name": "麥當勞",
       "amount": 16,
       "category": "飲食",
-      "id": "imp-0231",
+      "id": "imp-0232",
       "source": "import"
     },
     {
@@ -2206,7 +2214,7 @@ var LEDGER = {
       "name": "唐記包點",
       "amount": 51,
       "category": "飲食",
-      "id": "imp-0232",
+      "id": "imp-0233",
       "source": "import"
     },
     {
@@ -2215,7 +2223,7 @@ var LEDGER = {
       "name": "HKTVmall",
       "amount": 132.2,
       "category": "購物",
-      "id": "imp-0233",
+      "id": "imp-0234",
       "source": "import"
     },
     {
@@ -2224,7 +2232,7 @@ var LEDGER = {
       "name": "紙巾",
       "amount": 30.8,
       "category": "日用品",
-      "id": "imp-0234",
+      "id": "imp-0235",
       "source": "import"
     },
     {
@@ -2233,7 +2241,7 @@ var LEDGER = {
       "name": "Fusion",
       "amount": 36.5,
       "category": "超市",
-      "id": "imp-0235",
+      "id": "imp-0236",
       "source": "import"
     },
     {
@@ -2242,7 +2250,7 @@ var LEDGER = {
       "name": "手機膜",
       "amount": 61.47,
       "category": "購物",
-      "id": "imp-0236",
+      "id": "imp-0237",
       "source": "import"
     },
     {
@@ -2251,7 +2259,7 @@ var LEDGER = {
       "name": "廁所蘋果",
       "amount": 79,
       "category": "家居",
-      "id": "imp-0237",
+      "id": "imp-0238",
       "source": "import"
     }
   ]

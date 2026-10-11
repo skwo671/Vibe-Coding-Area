@@ -22,7 +22,7 @@ assertClose(byKey["2026-06"].remainder, -1091.19, "June remainder");
 assertClose(byKey["2026-07"].income, 1500, "July income");
 assertClose(byKey["2026-08"].expense, 3773.8, "August spend");
 assertClose(byKey["2026-08"].remainder, 641.4, "August remainder");
-assertClose(byKey["2026-09"].remainder, 212.46, "September remainder");
+assertClose(byKey["2026-09"].remainder, 254.96, "September remainder");
 assertClose(byKey["2026-10"].pool, 4858.96, "October opening");
 assertClose(byKey["2026-10"].expense, 2305.16, "October spend");
 assertClose(byKey["2026-10"].remainder, 2553.8, "October remainder");
