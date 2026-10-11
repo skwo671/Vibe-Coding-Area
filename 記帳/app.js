@@ -160,16 +160,22 @@ function renderMonthSpendChart(target, rows, months) {
   const grid = [0, max / 2, max].map((value) => `
     <line x1="${pad.l}" x2="${width - pad.r}" y1="${y(value)}" y2="${y(value)}" stroke="#eadfce" />
     <text x="4" y="${y(value) + 4}" font-size="11" fill="#6d655c">${Math.round(value)}</text>`).join("");
+  const half = roundMoney(month.budget / 2);
+  const halfLine = `<line x1="${pad.l}" x2="${width - pad.r}" y1="${y(half)}" y2="${y(half)}" stroke="#9a3d2f" stroke-dasharray="6 4" stroke-width="1.5" />`;
   const last = shown[shown.length - 1];
   const total = last ? `累積 ${money(last.cumulative)}，` : "";
   target.innerHTML = `
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${monthLabel(month.key)}累積支出">
       ${grid}
+      ${halfLine}
       <polyline fill="none" stroke="#1e4d86" stroke-width="2.5" points="${line}"></polyline>
       ${dots}
       ${labels}
     </svg>
-    <div class="legend"><span><i class="swatch" style="background:#1e4d86"></i>${monthLabel(month.key)}${total}縱軸 ${money(max)}（淨可支配 ${money(month.budget)} × 1.2）</span></div>`;
+    <div class="legend">
+      <span><i class="swatch" style="background:#1e4d86"></i>${monthLabel(month.key)}${total}縱軸 ${money(max)}（淨可支配 ${money(month.budget)} × 1.2）</span>
+      <span><i class="swatch" style="background:#9a3d2f"></i>淨可支配一半 ${money(half)}</span>
+    </div>`;
 }
 
 function renderChart(months) {
