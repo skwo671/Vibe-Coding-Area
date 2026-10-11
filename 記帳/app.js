@@ -148,9 +148,11 @@ function renderMonthSpendChart(target, rows, months) {
   const max = roundMoney(month.budget * 1.2);
   const x = (index) => pad.l + (index * (width - pad.l - pad.r)) / Math.max(days.length - 1, 1);
   const y = (value) => pad.t + ((max - value) * (height - pad.t - pad.b)) / (max || 1);
-  const line = days.map((day, index) => `${x(index)},${y(day.cumulative)}`).join(" ");
-  const dots = days.map((day, index) => `
-    <circle cx="${x(index)}" cy="${y(Math.min(day.cumulative, max))}" r="2.4" fill="#1e4d86">
+  const today = hkNow().date;
+  const shown = days.filter((day) => day.date <= today);
+  const line = shown.map((day) => `${x(days.indexOf(day))},${y(day.cumulative)}`).join(" ");
+  const dots = shown.map((day) => `
+    <circle cx="${x(days.indexOf(day))}" cy="${y(Math.min(day.cumulative, max))}" r="2.4" fill="#1e4d86">
       <title>${dayLabel(day.date)} 當日 ${money(day.amount)}，累積 ${money(day.cumulative)}</title>
     </circle>`).join("");
   const labels = days.map((day, index) => `
@@ -158,7 +160,8 @@ function renderMonthSpendChart(target, rows, months) {
   const grid = [0, max / 2, max].map((value) => `
     <line x1="${pad.l}" x2="${width - pad.r}" y1="${y(value)}" y2="${y(value)}" stroke="#eadfce" />
     <text x="4" y="${y(value) + 4}" font-size="11" fill="#6d655c">${Math.round(value)}</text>`).join("");
-  const last = days[days.length - 1];
+  const last = shown[shown.length - 1];
+  const total = last ? `累積 ${money(last.cumulative)}，` : "";
   target.innerHTML = `
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${monthLabel(month.key)}累積支出">
       ${grid}
@@ -166,7 +169,7 @@ function renderMonthSpendChart(target, rows, months) {
       ${dots}
       ${labels}
     </svg>
-    <div class="legend"><span><i class="swatch" style="background:#1e4d86"></i>${monthLabel(month.key)}累積 ${money(last.cumulative)}，縱軸 ${money(max)}（淨可支配 ${money(month.budget)} × 1.2）</span></div>`;
+    <div class="legend"><span><i class="swatch" style="background:#1e4d86"></i>${monthLabel(month.key)}${total}縱軸 ${money(max)}（淨可支配 ${money(month.budget)} × 1.2）</span></div>`;
 }
 
 function renderChart(months) {
