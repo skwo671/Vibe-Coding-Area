@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-10-10",
+  "importedThrough": "2026-10-11",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -83,7 +83,7 @@ var LEDGER = {
     "2026-10": {
       "budget": 4604,
       "roll": true,
-      "note": "10 月基線 $4,604，9 月剩餘滾入。最後餘額 $2,553.80。"
+      "note": "10 月基線 $4,604，9 月剩餘滾入。10 月 10 日餘額 $2,553.80。"
     }
   },
   "defaultBudget": 4604,
@@ -2260,6 +2260,15 @@ var LEDGER = {
       "amount": 79,
       "category": "家居",
       "id": "imp-0238",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-11",
+      "type": "expense",
+      "name": "牛角",
+      "amount": 293.7,
+      "category": "飲食",
+      "id": "imp-0239",
       "source": "import"
     }
   ]

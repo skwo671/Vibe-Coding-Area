@@ -24,8 +24,8 @@ assertClose(byKey["2026-08"].expense, 3773.8, "August spend");
 assertClose(byKey["2026-08"].remainder, 641.4, "August remainder");
 assertClose(byKey["2026-09"].remainder, 254.96, "September remainder");
 assertClose(byKey["2026-10"].pool, 4858.96, "October opening");
-assertClose(byKey["2026-10"].expense, 2305.16, "October spend");
-assertClose(byKey["2026-10"].remainder, 2553.8, "October remainder");
+assertClose(byKey["2026-10"].expense, 2598.86, "October spend");
+assertClose(byKey["2026-10"].remainder, 2260.1, "October remainder");
 assertClose(dayTotal(LEDGER.transactions, "2026-10-10"), 339.97, "10 Oct spend");
 assertClose(sumByType(LEDGER.transactions, "expense") > 15000 ? 1 : 0, 1, "has history");
 
