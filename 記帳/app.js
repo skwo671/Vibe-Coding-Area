@@ -212,8 +212,9 @@ function renderFixed() {
       <span></span>
     </div>`).join("")}
     <div class="month-foot">
-      <span>固定開支 ${money(net.fixedTotal)}</span>
-      <span>淨可支配 <strong>${money(net.net)}</strong></span>
+      <span>其他固定開支 ${money(net.fixedTotal)}</span>
+      <span>卡數（淨支票餘額）${money(net.net)}</span>
+      <span>下個月潛在固定支出 <strong>${money(roundMoney(net.fixedTotal + net.net))}</strong></span>
       <button class="primary" type="button" id="save-fixed">儲存</button>
     </div>`;
   $("save-fixed").addEventListener("click", () => {
