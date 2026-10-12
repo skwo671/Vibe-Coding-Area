@@ -56,7 +56,7 @@ h1 { font-size: 34px; line-height: 1.1; margin: 0; font-weight: 650; }
 .ghost { background: var(--card); }
 
 .grid { display: grid; gap: 14px; }
-.stats { grid-template-columns: repeat(4, 1fr); margin-bottom: 14px; }
+.stats { grid-template-columns: repeat(5, 1fr); margin-bottom: 14px; }
 .card {
   background: var(--card);
   border: 1px solid var(--line);

@@ -63,13 +63,23 @@ function saveExtra() {
 
 function renderStats(rows, months) {
   const current = months.find((month) => month.key === monthKey(state.day)) || months[months.length - 1];
-  const allSpend = sumByType(rows, "expense");
   const todaySpend = dayTotal(rows, state.day);
+  const used = current.pool > 0 ? (current.expense / current.pool) * 100 : 0;
+  const today = hkNow().date;
+  const [year, month] = current.key.split("-").map(Number);
+  const monthDays = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const todayKey = today.slice(0, 7);
+  const daysLeft = current.key < todayKey
+    ? 0
+    : current.key > todayKey
+      ? monthDays
+      : monthDays - Number(today.slice(8)) + 1;
+  const daily = daysLeft > 0 ? roundMoney(current.remainder / daysLeft) : null;
   $("stats").innerHTML = `
     <article class="card">
-      <div class="label">流水總支出</div>
-      <div class="value spend">${money(allSpend)}</div>
-      <div class="hint">6 月至今每一筆支出加總</div>
+      <div class="label">已用可支配</div>
+      <div class="value spend">${used.toFixed(1)}%</div>
+      <div class="hint">${money(current.expense)} / ${money(current.pool)}</div>
     </article>
     <article class="card">
       <div class="label">${monthLabel(current.key)}總支出</div>
@@ -85,6 +95,11 @@ function renderStats(rows, months) {
       <div class="label">${monthLabel(current.key)}剩餘</div>
       <div class="value ${current.remainder < 0 ? "spend" : "good"}">${money(current.remainder)}</div>
       <div class="hint">現行固定後淨可支配 ${money(currentNet().net)}</div>
+    </article>
+    <article class="card">
+      <div class="label">剩餘每日可花</div>
+      <div class="value ${daily != null && daily < 0 ? "spend" : "good"}">${daily == null ? "—" : money(daily)}</div>
+      <div class="hint">${daysLeft ? `剩餘 ${money(current.remainder)} ÷ ${daysLeft} 日，含今日` : "呢個月已經過咗"}</div>
     </article>`;
   $("day-picker").addEventListener("change", (event) => {
     state.day = event.target.value;
