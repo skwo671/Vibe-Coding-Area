@@ -2281,6 +2281,16 @@ var LEDGER = {
       "time": "13:15",
       "id": "imp-0240",
       "source": "import"
+    },
+    {
+      "date": "2026-10-12",
+      "type": "expense",
+      "name": "九腸加濕紙巾",
+      "amount": 33,
+      "category": "飲食",
+      "time": "13:43",
+      "id": "imp-0241",
+      "source": "import"
     }
   ]
 };
