@@ -179,12 +179,18 @@ function renderMonthSpendChart(target, rows, months) {
   const halfLine = `<line x1="${pad.l}" x2="${width - pad.r}" y1="${y(half)}" y2="${y(half)}" stroke="#9a3d2f" stroke-dasharray="6 4" stroke-width="1.5" />`;
   const last = shown[shown.length - 1];
   const total = last ? `累積 ${money(last.cumulative)}，` : "";
+  const lastIndex = last ? days.indexOf(last) : 0;
+  const labelX = last ? Math.min(x(lastIndex) + 8, width - pad.r - 72) : 0;
+  const amountLabel = last
+    ? `<text x="${labelX}" y="${y(Math.min(last.cumulative, max)) - 8}" font-size="13" font-weight="650" fill="#1e4d86">${money(last.cumulative)}</text>`
+    : "";
   target.innerHTML = `
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${monthLabel(month.key)}累積支出">
       ${grid}
       ${halfLine}
       <polyline fill="none" stroke="#1e4d86" stroke-width="2.5" points="${line}"></polyline>
       ${dots}
+      ${amountLabel}
       ${labels}
     </svg>
     <div class="legend">

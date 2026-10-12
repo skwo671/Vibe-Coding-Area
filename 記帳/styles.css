@@ -70,7 +70,7 @@ h1 { font-size: 34px; line-height: 1.1; margin: 0; font-weight: 650; }
 .value.spend { color: var(--spend); }
 .value.good { color: var(--good); }
 
-.layout { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 14px; }
+.layout { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 14px; margin-top: 14px; }
 .section-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .section-title h2 { margin: 0; font-size: 18px; }
 .section-title p { margin: 0; color: var(--muted); font-size: 13px; }

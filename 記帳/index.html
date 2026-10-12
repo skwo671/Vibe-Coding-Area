@@ -23,20 +23,22 @@
 
     <section id="overview">
       <div class="grid stats" id="stats"></div>
-      <article class="card" style="margin-top:14px">
-        <div class="section-title">
-          <h2>當日累積支出</h2>
-          <p>每兩小時一格，線係由零時累積到該格。</p>
-        </div>
-        <div id="day-chart-overview"></div>
-      </article>
-      <article class="card" style="margin-top:14px">
-        <div class="section-title">
-          <h2>當月累積支出</h2>
-          <p>橫軸係成個月，縱軸係該月淨可支配 × 1.2</p>
-        </div>
-        <div id="month-chart-overview"></div>
-      </article>
+      <div class="layout">
+        <article class="card">
+          <div class="section-title">
+            <h2>當月累積支出</h2>
+            <p>橫軸係成個月，縱軸係該月淨可支配 × 1.2</p>
+          </div>
+          <div id="month-chart-overview"></div>
+        </article>
+        <article class="card">
+          <div class="section-title">
+            <h2>當日累積支出</h2>
+            <p>每兩小時一格</p>
+          </div>
+          <div id="day-chart-overview"></div>
+        </article>
+      </div>
       <div class="layout">
         <article class="card">
           <div class="section-title">
