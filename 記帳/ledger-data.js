@@ -2291,6 +2291,16 @@ var LEDGER = {
       "time": "13:43",
       "id": "imp-0241",
       "source": "import"
+    },
+    {
+      "date": "2026-10-12",
+      "type": "expense",
+      "name": "雜菜",
+      "amount": 15,
+      "category": "超市",
+      "time": "13:48",
+      "id": "imp-0242",
+      "source": "import"
     }
   ]
 };
