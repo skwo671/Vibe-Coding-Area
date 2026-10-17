@@ -2360,6 +2360,46 @@ var LEDGER = {
       "time": "13:00",
       "id": "imp-0248",
       "source": "import"
+    },
+    {
+      "date": "2026-10-17",
+      "type": "expense",
+      "name": "Market Place買餸",
+      "amount": 167.9,
+      "category": "超市",
+      "time": "16:39",
+      "id": "imp-0249",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-17",
+      "type": "expense",
+      "name": "自家麵",
+      "amount": 171,
+      "category": "飲食",
+      "time": "16:39",
+      "id": "imp-0250",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-17",
+      "type": "expense",
+      "name": "花",
+      "amount": 68,
+      "category": "其他",
+      "time": "16:39",
+      "id": "imp-0251",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-17",
+      "type": "expense",
+      "name": "吃茶三千",
+      "amount": 32,
+      "category": "飲食",
+      "time": "16:39",
+      "id": "imp-0252",
+      "source": "import"
     }
   ]
 };
