@@ -2420,6 +2420,16 @@ var LEDGER = {
       "time": "08:10",
       "id": "imp-0254",
       "source": "import"
+    },
+    {
+      "date": "2026-10-18",
+      "type": "expense",
+      "name": "Market Place",
+      "amount": 33.4,
+      "category": "超市",
+      "time": "17:51",
+      "id": "imp-0255",
+      "source": "import"
     }
   ]
 };
