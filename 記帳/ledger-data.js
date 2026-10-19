@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-10-18",
+  "importedThrough": "2026-10-19",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -2429,6 +2429,36 @@ var LEDGER = {
       "category": "超市",
       "time": "17:51",
       "id": "imp-0255",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-19",
+      "type": "expense",
+      "name": "萬寧抹手紙",
+      "amount": 16,
+      "category": "日用品",
+      "time": "17:29",
+      "id": "imp-0256",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-19",
+      "type": "expense",
+      "name": "Fusion",
+      "amount": 47.9,
+      "category": "超市",
+      "time": "17:34",
+      "id": "imp-0257",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-19",
+      "type": "expense",
+      "name": "Fusion中國大蕉",
+      "amount": 10.2,
+      "category": "超市",
+      "time": "17:39",
+      "id": "imp-0258",
       "source": "import"
     }
   ]
