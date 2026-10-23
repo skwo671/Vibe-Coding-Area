@@ -2500,6 +2500,16 @@ var LEDGER = {
       "time": "14:10",
       "id": "imp-0262",
       "source": "import"
+    },
+    {
+      "date": "2026-10-23",
+      "type": "expense",
+      "name": "機場快線",
+      "amount": 70,
+      "category": "交通",
+      "time": "20:32",
+      "id": "imp-0263",
+      "source": "import"
     }
   ]
 };
