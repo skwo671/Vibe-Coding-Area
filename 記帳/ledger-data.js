@@ -2530,6 +2530,16 @@ var LEDGER = {
       "time": "09:53",
       "id": "imp-0265",
       "source": "import"
+    },
+    {
+      "date": "2026-10-25",
+      "type": "expense",
+      "name": "歌唱比賽報名費",
+      "amount": 300,
+      "category": "娛樂",
+      "time": "09:54",
+      "id": "imp-0266",
+      "source": "import"
     }
   ]
 };
