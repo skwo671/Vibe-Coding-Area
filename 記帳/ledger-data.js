@@ -2540,6 +2540,26 @@ var LEDGER = {
       "time": "09:54",
       "id": "imp-0266",
       "source": "import"
+    },
+    {
+      "date": "2026-10-25",
+      "type": "expense",
+      "name": "飯團",
+      "amount": 46,
+      "category": "飲食",
+      "time": "09:57",
+      "id": "imp-0267",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-25",
+      "type": "expense",
+      "name": "豆腐花",
+      "amount": 10,
+      "category": "飲食",
+      "time": "09:57",
+      "id": "imp-0268",
+      "source": "import"
     }
   ]
 };
