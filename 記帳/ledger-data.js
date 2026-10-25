@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-10-23",
+  "importedThrough": "2026-10-25",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -2509,6 +2509,26 @@ var LEDGER = {
       "category": "交通",
       "time": "20:32",
       "id": "imp-0263",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-25",
+      "type": "expense",
+      "name": "唱K加Tesla",
+      "amount": 241,
+      "category": "娛樂",
+      "time": "09:53",
+      "id": "imp-0264",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-25",
+      "type": "expense",
+      "name": "Starbucks",
+      "amount": 31,
+      "category": "飲食",
+      "time": "09:53",
+      "id": "imp-0265",
       "source": "import"
     }
   ]
