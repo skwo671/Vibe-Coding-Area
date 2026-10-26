@@ -2590,6 +2590,16 @@ var LEDGER = {
       "time": "13:25",
       "id": "imp-0271",
       "source": "import"
+    },
+    {
+      "date": "2026-10-26",
+      "type": "expense",
+      "name": "春水堂",
+      "amount": 168,
+      "category": "飲食",
+      "time": "19:58",
+      "id": "imp-0272",
+      "source": "import"
     }
   ]
 };
