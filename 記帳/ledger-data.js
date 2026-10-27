@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-10-26",
+  "importedThrough": "2026-10-27",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -2599,6 +2599,16 @@ var LEDGER = {
       "category": "飲食",
       "time": "19:58",
       "id": "imp-0272",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-27",
+      "type": "expense",
+      "name": "超市",
+      "amount": 82.8,
+      "category": "超市",
+      "time": "19:21",
+      "id": "imp-0273",
       "source": "import"
     }
   ]
