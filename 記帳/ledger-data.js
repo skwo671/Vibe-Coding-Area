@@ -84,6 +84,11 @@ var LEDGER = {
       "budget": 4604,
       "roll": true,
       "note": "10 月基線 $4,604，9 月剩餘滾入。10 月 10 日餘額 $2,553.80。"
+    },
+    "2026-11": {
+      "budget": 4604,
+      "roll": true,
+      "note": "10 月負數餘額滾入，由 11 月可支配扣除。"
     }
   },
   "defaultBudget": 4604,
@@ -117,6 +122,11 @@ var LEDGER = {
       "month": "2026-10",
       "amount": 4604,
       "note": "基線維持"
+    },
+    {
+      "month": "2026-11",
+      "amount": 4604,
+      "note": "基線維持，10 月負數另扣"
     }
   ],
   "transactions": [
