@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-10-29",
+  "importedThrough": "2026-10-30",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -2639,6 +2639,16 @@ var LEDGER = {
       "category": "日用品",
       "time": "07:43",
       "id": "imp-0275",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-30",
+      "type": "expense",
+      "name": "Pizza Hut",
+      "amount": 181,
+      "category": "飲食",
+      "time": "18:25",
+      "id": "imp-0276",
       "source": "import"
     }
   ]
