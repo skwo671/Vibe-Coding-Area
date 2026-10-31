@@ -2690,6 +2690,16 @@ var LEDGER = {
       "time": "14:51",
       "id": "imp-0280",
       "source": "import"
+    },
+    {
+      "date": "2026-10-31",
+      "type": "expense",
+      "name": "樓上",
+      "amount": 109,
+      "category": "購物",
+      "time": "17:08",
+      "id": "imp-0281",
+      "source": "import"
     }
   ]
 };
