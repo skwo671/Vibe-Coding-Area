@@ -2710,6 +2710,16 @@ var LEDGER = {
       "time": "19:24",
       "id": "imp-0282",
       "source": "import"
+    },
+    {
+      "date": "2026-10-31",
+      "type": "expense",
+      "name": "HKTVmall",
+      "amount": 288.6,
+      "category": "購物",
+      "time": "22:00",
+      "id": "imp-0283",
+      "source": "import"
     }
   ]
 };
