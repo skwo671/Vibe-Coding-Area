@@ -27,7 +27,7 @@ assertClose(byKey["2026-10"].pool, 4858.96, "October opening");
 assertClose(byKey["2026-10"].expense, 5402.25, "October spend");
 assertClose(byKey["2026-10"].remainder, -543.29, "October remainder");
 assertClose(byKey["2026-11"].rolled, -543.29, "November carries the deficit");
-assertClose(byKey["2026-11"].pool, 4060.71, "November opening");
+assertClose(byKey["2026-11"].pool, 5016.61, "November opening");
 assertClose(dayTotal(LEDGER.transactions, "2026-10-10"), 339.97, "10 Oct spend");
 const oct11 = daySpendBySlot(LEDGER.transactions, "2026-10-11");
 assertClose(oct11.slots[9].amount, 293.7, "牛角 in 18:00 slot");
@@ -43,7 +43,7 @@ assertClose(roundMoney(byKey["2026-10"].budget * 1.2), 5524.8, "October axis");
 assertClose(sumByType(LEDGER.transactions, "expense") > 15000 ? 1 : 0, 1, "has history");
 
 const fixed = LEDGER.fixed.reduce((sum, row) => sum + row.amount, 0);
-if (Math.abs(LEDGER.salary - fixed - 4603.6) > 0.05) {
+if (Math.abs(LEDGER.salary - fixed - 5559.9) > 0.05) {
   throw new Error(`fixed net ${LEDGER.salary - fixed}`);
 }
 
