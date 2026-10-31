@@ -2700,6 +2700,16 @@ var LEDGER = {
       "time": "17:08",
       "id": "imp-0281",
       "source": "import"
+    },
+    {
+      "date": "2026-10-31",
+      "type": "expense",
+      "name": "Market Place",
+      "amount": 410.4,
+      "category": "超市",
+      "time": "19:24",
+      "id": "imp-0282",
+      "source": "import"
     }
   ]
 };
