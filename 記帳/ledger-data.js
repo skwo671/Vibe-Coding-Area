@@ -2660,6 +2660,36 @@ var LEDGER = {
       "time": "07:11",
       "id": "imp-0277",
       "source": "import"
+    },
+    {
+      "date": "2026-10-31",
+      "type": "expense",
+      "name": "現金",
+      "amount": 100,
+      "category": "其他",
+      "time": "14:51",
+      "id": "imp-0278",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-31",
+      "type": "expense",
+      "name": "自家麵",
+      "amount": 124,
+      "category": "飲食",
+      "time": "14:51",
+      "id": "imp-0279",
+      "source": "import"
+    },
+    {
+      "date": "2026-10-31",
+      "type": "expense",
+      "name": "蛋豆腐",
+      "amount": 91,
+      "category": "超市",
+      "time": "14:51",
+      "id": "imp-0280",
+      "source": "import"
     }
   ]
 };
