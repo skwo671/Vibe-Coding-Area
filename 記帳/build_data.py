@@ -313,6 +313,7 @@ tx += [
     {**E("2026-10-31", "樓上", 109, "購物"), "time": "17:08"},
     {**E("2026-10-31", "Market Place", 410.4, "超市"), "time": "19:24"},
     {**E("2026-10-31", "HKTVmall", 288.6, "購物"), "time": "22:00"},
+    {**E("2026-11-01", "麥當勞", 18, "飲食"), "time": "18:00"},
 ]
 
 for i, row in enumerate(tx, 1):
@@ -337,7 +338,7 @@ data = {
     "currency": "HKD",
     "salary": 19715,
     "fixed": fixed,
-    "importedThrough": "2026-10-31",
+    "importedThrough": "2026-11-01",
     "months": {
         "2026-06": {"budget": 3110, "roll": False, "note": "6 月由剩餘 $3,110 重新記流水，未用成個月預算。"},
         "2026-07": {"budget": 4715.2, "roll": False, "note": "7 月 1 日按財務目標 $4,715.20 重置。"},
