@@ -2770,6 +2770,26 @@ var LEDGER = {
       "time": "19:56",
       "id": "imp-0288",
       "source": "import"
+    },
+    {
+      "date": "2026-11-02",
+      "type": "expense",
+      "name": "萬寧",
+      "amount": 84,
+      "category": "日用品",
+      "time": "21:29",
+      "id": "imp-0289",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-02",
+      "type": "expense",
+      "name": "萬寧",
+      "amount": 71.5,
+      "category": "日用品",
+      "time": "21:29",
+      "id": "imp-0290",
+      "source": "import"
     }
   ]
 };
