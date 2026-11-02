@@ -2754,9 +2754,9 @@ var LEDGER = {
     {
       "date": "2026-11-02",
       "type": "expense",
-      "name": "大新",
+      "name": "烏冬同饅頭",
       "amount": 54,
-      "category": "超市",
+      "category": "飲食",
       "time": "13:50",
       "id": "imp-0287",
       "source": "import"
