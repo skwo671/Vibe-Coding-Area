@@ -2760,6 +2760,16 @@ var LEDGER = {
       "time": "13:50",
       "id": "imp-0287",
       "source": "import"
+    },
+    {
+      "date": "2026-11-02",
+      "type": "expense",
+      "name": "旺角food court",
+      "amount": 142,
+      "category": "飲食",
+      "time": "19:56",
+      "id": "imp-0288",
+      "source": "import"
     }
   ]
 };
