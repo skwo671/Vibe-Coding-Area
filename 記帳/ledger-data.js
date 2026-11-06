@@ -2810,6 +2810,16 @@ var LEDGER = {
       "time": "08:48",
       "id": "imp-0292",
       "source": "import"
+    },
+    {
+      "date": "2026-11-06",
+      "type": "expense",
+      "name": "繁星BBQ",
+      "amount": 100,
+      "category": "飲食",
+      "time": "16:54",
+      "id": "imp-0293",
+      "source": "import"
     }
   ]
 };
