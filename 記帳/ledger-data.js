@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-11-06",
+  "importedThrough": "2026-11-07",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -2819,6 +2819,16 @@ var LEDGER = {
       "category": "飲食",
       "time": "16:54",
       "id": "imp-0293",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-07",
+      "type": "expense",
+      "name": "大欖繁星燒烤",
+      "amount": 556,
+      "category": "飲食",
+      "time": "16:51",
+      "id": "imp-0294",
       "source": "import"
     }
   ]
