@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>流水帳</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <div>
+        <p class="eyebrow">HKD ledger</p>
+        <h1>流水帳</h1>
+        <p class="sub">由 Gemini 記帳搬過嚟。固定開支先扣走，下面先係每月可以花嘅錢同每一筆明細。</p>
+      </div>
+      <nav class="tabs" id="tabs">
+        <button type="button" data-tab="overview" class="active">總覽</button>
+        <button type="button" data-tab="ledger">流水</button>
+        <button type="button" data-tab="fixed">固定收支</button>
+      </nav>
+    </header>
+
+    <section id="overview">
+      <div class="grid stats" id="stats"></div>
+      <div class="layout">
+        <article class="card">
+          <div class="section-title">
+            <h2>當月累積支出</h2>
+            <p>橫軸係成個月，縱軸係該月淨可支配 × 1.2</p>
+          </div>
+          <div id="month-chart-overview"></div>
+        </article>
+        <article class="card">
+          <div class="section-title">
+            <h2>當日累積支出</h2>
+            <p>每兩小時一格</p>
+          </div>
+          <div id="day-chart-overview"></div>
+        </article>
+      </div>
+      <div class="layout">
+        <article class="card">
+          <div class="section-title">
+            <h2>每月淨可支配</h2>
+            <p>藍線係預算，綠線係該月計完之後剩低</p>
+          </div>
+          <div id="chart"></div>
+        </article>
+        <article class="card">
+          <div class="section-title">
+            <h2>同舊帳嘅分別</h2>
+          </div>
+          <div class="note" id="reconcile"></div>
+        </article>
+      </div>
+      <article class="card" style="margin-top:14px">
+        <div class="section-title">
+          <h2>每月結算</h2>
+          <p>月初可支配加額外收入，再減流水支出</p>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="month-table"></table>
+        </div>
+      </article>
+    </section>
+
+    <section id="ledger" class="hidden">
+      <article class="card">
+        <div class="section-title">
+          <h2>記一筆</h2>
+          <p>新數會留喺呢部電腦</p>
+        </div>
+        <form class="form" id="entry-form">
+          <input type="date" name="date" required />
+          <input type="time" name="time" required />
+          <select name="type">
+            <option value="expense">支出</option>
+            <option value="income">收入</option>
+          </select>
+          <input type="text" name="name" placeholder="例如：午餐" required />
+          <input type="number" name="amount" min="0" step="0.01" placeholder="金額" required />
+          <select name="category" id="category"></select>
+          <button class="primary" type="submit">加入</button>
+        </form>
+        <div class="filters">
+          <select id="month-filter"></select>
+          <select id="category-filter"></select>
+          <input type="search" id="search" placeholder="搜尋明細" />
+        </div>
+        <div class="section-title" style="margin-top:18px">
+          <h2>當日累積支出</h2>
+          <p>每兩小時一格</p>
+        </div>
+        <div id="day-chart"></div>
+        <div class="section-title" style="margin-top:18px">
+          <h2>當月累積支出</h2>
+          <p>橫軸係成個月，縱軸係該月淨可支配 × 1.2</p>
+        </div>
+        <div id="month-chart"></div>
+        <div id="ledger-list"></div>
+        <div class="month-foot" id="month-foot"></div>
+      </article>
+    </section>
+
+    <section id="fixed" class="hidden">
+      <article class="card">
+        <div class="section-title">
+          <h2>每月固定收支</h2>
+          <p>改完會更新上面嘅現行淨可支配。舊月份預算唔會被改寫。</p>
+        </div>
+        <form id="fixed-form"></form>
+      </article>
+    </section>
+  </main>
+  <script src="ledger-data.js"></script>
+  <script src="ledger-calc.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
