@@ -2870,6 +2870,16 @@ var LEDGER = {
       "time": "13:54",
       "id": "imp-0298",
       "source": "import"
+    },
+    {
+      "date": "2026-11-08",
+      "type": "expense",
+      "name": "麥當勞",
+      "amount": 18,
+      "category": "飲食",
+      "time": "15:17",
+      "id": "imp-0299",
+      "source": "import"
     }
   ]
 };
