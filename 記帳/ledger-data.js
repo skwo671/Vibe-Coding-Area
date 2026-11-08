@@ -2880,6 +2880,36 @@ var LEDGER = {
       "time": "15:17",
       "id": "imp-0299",
       "source": "import"
+    },
+    {
+      "date": "2026-11-08",
+      "type": "expense",
+      "name": "譚仔",
+      "amount": 13,
+      "category": "飲食",
+      "time": "18:30",
+      "id": "imp-0300",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-08",
+      "type": "expense",
+      "name": "Market Place",
+      "amount": 107,
+      "category": "超市",
+      "time": "18:30",
+      "id": "imp-0301",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-08",
+      "type": "expense",
+      "name": "樓上",
+      "amount": 94,
+      "category": "購物",
+      "time": "18:30",
+      "id": "imp-0302",
+      "source": "import"
     }
   ]
 };
