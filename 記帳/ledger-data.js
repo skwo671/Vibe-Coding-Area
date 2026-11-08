@@ -2850,6 +2850,26 @@ var LEDGER = {
       "time": "10:40",
       "id": "imp-0296",
       "source": "import"
+    },
+    {
+      "date": "2026-11-08",
+      "type": "expense",
+      "name": "東涌巴士",
+      "amount": 20,
+      "category": "交通",
+      "time": "13:54",
+      "id": "imp-0297",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-08",
+      "type": "expense",
+      "name": "船去梅窩",
+      "amount": 15,
+      "category": "交通",
+      "time": "13:54",
+      "id": "imp-0298",
+      "source": "import"
     }
   ]
 };
