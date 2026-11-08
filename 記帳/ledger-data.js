@@ -2840,6 +2840,16 @@ var LEDGER = {
       "time": "10:01",
       "id": "imp-0295",
       "source": "import"
+    },
+    {
+      "date": "2026-11-08",
+      "type": "expense",
+      "name": "喜馬拉雅鹽糖",
+      "amount": 20,
+      "category": "飲食",
+      "time": "10:40",
+      "id": "imp-0296",
+      "source": "import"
     }
   ]
 };
