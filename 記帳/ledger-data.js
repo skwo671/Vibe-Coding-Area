@@ -2950,6 +2950,26 @@ var LEDGER = {
       "time": "07:10",
       "id": "imp-0306",
       "source": "import"
+    },
+    {
+      "date": "2026-11-12",
+      "type": "expense",
+      "name": "永年",
+      "amount": 100,
+      "category": "飲食",
+      "time": "20:55",
+      "id": "imp-0307",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-12",
+      "type": "expense",
+      "name": "花",
+      "amount": 45,
+      "category": "其他",
+      "time": "20:55",
+      "id": "imp-0308",
+      "source": "import"
     }
   ]
 };
