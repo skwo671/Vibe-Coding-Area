@@ -2980,6 +2980,16 @@ var LEDGER = {
       "time": "13:41",
       "id": "imp-0309",
       "source": "import"
+    },
+    {
+      "date": "2026-11-13",
+      "type": "expense",
+      "name": "石頭鍋",
+      "amount": 538,
+      "category": "飲食",
+      "time": "23:21",
+      "id": "imp-0310",
+      "source": "import"
     }
   ]
 };
