@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-11-13",
+  "importedThrough": "2026-11-14",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -2989,6 +2989,46 @@ var LEDGER = {
       "category": "飲食",
       "time": "23:21",
       "id": "imp-0310",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-14",
+      "type": "expense",
+      "name": "香薰藤條",
+      "amount": 10.42,
+      "category": "家居",
+      "time": "16:33",
+      "id": "imp-0311",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-14",
+      "type": "expense",
+      "name": "星巴克",
+      "amount": 17,
+      "category": "飲食",
+      "time": "16:33",
+      "id": "imp-0312",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-14",
+      "type": "expense",
+      "name": "Muji",
+      "amount": 137.7,
+      "category": "購物",
+      "time": "16:33",
+      "id": "imp-0313",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-14",
+      "type": "expense",
+      "name": "味千拉麵",
+      "amount": 131,
+      "category": "飲食",
+      "time": "16:33",
+      "id": "imp-0314",
       "source": "import"
     }
   ]
