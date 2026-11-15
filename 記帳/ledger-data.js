@@ -58,7 +58,7 @@ var LEDGER = {
       "note": ""
     }
   ],
-  "importedThrough": "2026-11-14",
+  "importedThrough": "2026-11-15",
   "months": {
     "2026-06": {
       "budget": 3110,
@@ -3029,6 +3029,36 @@ var LEDGER = {
       "category": "飲食",
       "time": "16:33",
       "id": "imp-0314",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-15",
+      "type": "expense",
+      "name": "蛋",
+      "amount": 20,
+      "category": "超市",
+      "time": "22:14",
+      "id": "imp-0315",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-15",
+      "type": "expense",
+      "name": "巴士",
+      "amount": 6.3,
+      "category": "交通",
+      "time": "22:14",
+      "id": "imp-0316",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-15",
+      "type": "expense",
+      "name": "紙用品",
+      "amount": 38,
+      "category": "日用品",
+      "time": "22:14",
+      "id": "imp-0317",
       "source": "import"
     }
   ]
