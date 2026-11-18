@@ -3090,6 +3090,16 @@ var LEDGER = {
       "time": "13:51",
       "id": "imp-0320",
       "source": "import"
+    },
+    {
+      "date": "2026-11-18",
+      "type": "expense",
+      "name": "香蕉",
+      "amount": 16,
+      "category": "超市",
+      "time": "14:05",
+      "id": "imp-0321",
+      "source": "import"
     }
   ]
 };
