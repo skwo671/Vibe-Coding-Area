@@ -3140,6 +3140,16 @@ var LEDGER = {
       "time": "08:47",
       "id": "imp-0325",
       "source": "import"
+    },
+    {
+      "date": "2026-11-20",
+      "type": "expense",
+      "name": "咖啡",
+      "amount": 11,
+      "category": "飲食",
+      "time": "16:03",
+      "id": "imp-0326",
+      "source": "import"
     }
   ]
 };
