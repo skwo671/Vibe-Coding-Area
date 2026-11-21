@@ -3160,6 +3160,16 @@ var LEDGER = {
       "time": "13:04",
       "id": "imp-0327",
       "source": "import"
+    },
+    {
+      "date": "2026-11-21",
+      "type": "expense",
+      "name": "抗班班",
+      "amount": 208,
+      "category": "其他",
+      "time": "17:43",
+      "id": "imp-0328",
+      "source": "import"
     }
   ]
 };
