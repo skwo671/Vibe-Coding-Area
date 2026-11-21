@@ -3200,6 +3200,16 @@ var LEDGER = {
       "time": "17:48",
       "id": "imp-0331",
       "source": "import"
+    },
+    {
+      "date": "2026-11-21",
+      "type": "expense",
+      "name": "淘寶",
+      "amount": 125.6,
+      "category": "購物",
+      "time": "18:40",
+      "id": "imp-0332",
+      "source": "import"
     }
   ]
 };
