@@ -3180,6 +3180,16 @@ var LEDGER = {
       "time": "17:44",
       "id": "imp-0329",
       "source": "import"
+    },
+    {
+      "date": "2026-11-21",
+      "type": "expense",
+      "name": "消毒紙巾",
+      "amount": 5,
+      "category": "日用品",
+      "time": "17:44",
+      "id": "imp-0330",
+      "source": "import"
     }
   ]
 };
