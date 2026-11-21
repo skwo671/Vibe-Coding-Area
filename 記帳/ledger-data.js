@@ -3190,6 +3190,16 @@ var LEDGER = {
       "time": "17:44",
       "id": "imp-0330",
       "source": "import"
+    },
+    {
+      "date": "2026-11-21",
+      "type": "expense",
+      "name": "腸仔包加星巴克嘢飲",
+      "amount": 29,
+      "category": "飲食",
+      "time": "17:48",
+      "id": "imp-0331",
+      "source": "import"
     }
   ]
 };
