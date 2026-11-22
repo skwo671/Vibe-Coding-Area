@@ -3220,6 +3220,46 @@ var LEDGER = {
       "time": "10:02",
       "id": "imp-0333",
       "source": "import"
+    },
+    {
+      "date": "2026-11-22",
+      "type": "expense",
+      "name": "JHC蛋卷片",
+      "amount": 14.9,
+      "category": "超市",
+      "time": "10:36",
+      "id": "imp-0334",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-22",
+      "type": "expense",
+      "name": "萬寧口罩同紙巾",
+      "amount": 111.9,
+      "category": "日用品",
+      "time": "10:50",
+      "id": "imp-0335",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-22",
+      "type": "expense",
+      "name": "萬寧濕紙巾",
+      "amount": 38,
+      "category": "日用品",
+      "time": "10:52",
+      "id": "imp-0336",
+      "source": "import"
+    },
+    {
+      "date": "2026-11-22",
+      "type": "expense",
+      "name": "Fusion",
+      "amount": 174.8,
+      "category": "超市",
+      "time": "11:20",
+      "id": "imp-0337",
+      "source": "import"
     }
   ]
 };
