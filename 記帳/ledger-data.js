@@ -3284,10 +3284,10 @@ var LEDGER = {
     {
       "date": "2026-11-26",
       "type": "expense",
-      "name": "烏冬",
+      "name": "大生讚岐烏冬",
       "amount": 25,
-      "category": "飲食",
-      "time": "13:11",
+      "category": "超市",
+      "time": "13:06",
       "id": "imp-0340",
       "source": "import"
     }
