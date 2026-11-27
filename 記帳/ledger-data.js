@@ -3272,12 +3272,11 @@ var LEDGER = {
       "source": "import"
     },
     {
-      "date": "2026-11-25",
-      "type": "income",
+      "date": "2026-11-23",
+      "type": "expense",
       "name": "入金",
       "amount": 300,
-      "category": "其他收入",
-      "time": "18:42",
+      "category": "其他",
       "id": "imp-0339",
       "source": "import"
     },
